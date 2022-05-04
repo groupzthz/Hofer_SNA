@@ -11,7 +11,7 @@ library("sna")
 library("here")
 getwd()
 
-
+test
 path_out = 'C:\\Users\\matthew\\Desktop\\HenSNA\\'
 
 
