@@ -11,6 +11,9 @@ library("sna")
 library("here")
 getwd()
 
+list.files()
+
+
 plots_path_out = 'C:\\Users\\matthew\\Desktop\\Hofer_SNA\\plots\\'
 
 
@@ -74,8 +77,10 @@ dat.2 <-  dat %>%
 write.csv(dat.1,paste(path_out, 'rawPenD.1.csv'))
 write.csv(dat.2,paste(path_out, 'rawPenD.2.csv'))
 
-dat.1 <- read.csv(" rawPenD.1.csv")
-dat.2 <- read.csv(" rawPenD.2.csv")
+dat.1 <- read.csv("rawPenD.1.csv")
+dat.2 <- read.csv("rawPenD.2.csv")
+
+summary(dat.1)
 
 ###need to take off the first column if uploading from saved csv file###
 dat.1 <- dat.1[,-1]
@@ -101,8 +106,8 @@ dat.e.2 <- dat.pen.e %>%
 write.csv(dat.e.1,paste(path_out, 'rawPenE.1.csv'))
 write.csv(dat.e.2,paste(path_out, 'rawPenE.2.csv'))
 
-dat.e.1 <- read.csv(" rawPenE.1.csv")
-dat.e.2 <- read.csv(" rawPenE.2.csv")
+dat.e.1 <- read.csv("rawPenE.1.csv")
+dat.e.2 <- read.csv("rawPenE.2.csv")
 
 dat.e.1 <- dat.e.1[, -1]
 dat.e.2 <- dat.e.2[, -1]
@@ -125,8 +130,8 @@ write.csv(dat.f.1,paste(path_out, 'rawPenF.1.csv'))
 write.csv(dat.f.2,paste(path_out, 'rawPenF.2.csv'))
 
 
-dat.f.1 <- read.csv(" rawPenF.1.csv")
-dat.f.2 <- read.csv(" rawPenF.2.csv")
+dat.f.1 <- read.csv("rawPenF.1.csv")
+dat.f.2 <- read.csv("rawPenF.2.csv")
 
 
 dat.f.1 <- dat.f.1[, -1]
@@ -189,42 +194,84 @@ m.list.f = lapply(d.dat.f, function(x){
   
 })
 
-adjs = lapply(m.list.d, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
+adjs.d = lapply(m.list.d, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
 
-adjs = lapply(m.list.e, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
+adjs.e = lapply(m.list.e, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
 
 adjs.f = lapply(m.list.f, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
 
 adjs
 
-gs = lapply(adjs, function(x) graph_from_adjacency_matrix(x, "undirected", weighted = T))
+gs.d = lapply(adjs.d, function(x) graph_from_adjacency_matrix(x, "undirected", weighted = T))
+
+gs.e = lapply(adjs.e, function(x) graph_from_adjacency_matrix(x, "undirected", weighted = T))
 
 gs.f = lapply(adjs.f, function(x) graph_from_adjacency_matrix(x, "undirected", weighted = T))
 
-time.period = c("1-5 days", "25-30 days")
+time.period = c("1-5 days", "20-25 days")
 default = par()
 par(mfrow = c(1,2))
 
 for(i in 1:2){
-  plot(gs[[i]], edge.width = E(gs[[i]])$weight*200, vertex.label = "", vertex.color = "gold1", vertex.size = 10, edge.color = "gray10", main = paste(time.period[i]))
+  plot(gs.d[[i]], edge.width = E(gs.d[[i]])$weight*200, vertex.label = "", vertex.color = "gold1", vertex.size = 10, edge.color = "gray10", main = paste(time.period[i]))
 }
 
 for(i in 1:2){
   plot(gs.f[[i]], edge.width = E(gs.f[[i]])$weight*200, vertex.label = "", vertex.color = "gold1", vertex.size = 10, edge.color = "gray10", main = paste(time.period[i]))
 }
-coms = lapply(gs, function(x) cluster_fast_greedy(x))
+
+coms = lapply(gs.d, function(x) cluster_fast_greedy(x))
+coms = lapply(gs.e, function(x) cluster_fast_greedy(x))
 coms = lapply(gs.f, function(x) cluster_fast_greedy(x))
+
 mods = sapply(coms, modularity)
-com.colors = list(c("blue", "yellow", "green", "red"), c("green", "blue", "red", "yellow"))
+
+com.colors = list(c("blue", "yellow", "green", "red"), c( "green",  "blue", "red", "yellow"))
+
+png(filename = paste(plots_path_out, 'penD.modularity.png'), width = 1024, height = 768, pointsize = 12)
+
 set.seed(2)
 par(mfrow = c(1,2))
+
+
 for(i in 1:2){
-  l = layout_with_fr(gs[[i]])
-  V(gs[[i]])$color = com.colors[[i]][membership(coms[[i]])]
-  plot(gs[[i]], layout = l, edge.width = E(gs[[i]])$weight*200, vertex.label = "", vertex.size = 10, edge.color = "gray10", main = paste(time.period[i], ":Modularity =", round(mods[[i]], 2)))
+  l = layout_with_fr(gs.d[[i]])
+  V(gs.d[[i]])$color = com.colors[[i]][membership(coms[[i]])]
+  plot(gs.d[[i]], layout = l, edge.width = E(gs.d[[i]])$weight*200,  vertex.label = "", vertex.size = 10, edge.color = "gray10")
+  title(paste(time.period[i], ":Modularity =", round(mods[[i]], 2)),  cex.main = 2.25)
 }
 
+dev.off()
 
+png(filename = paste(plots_path_out, 'penE.modularity.png'), width = 1024, height = 768, pointsize = 12)
+
+set.seed(2)
+par(mfrow = c(1,2))
+
+
+for(i in 1:2){
+  l = layout_with_fr(gs.e[[i]])
+  V(gs.e[[i]])$color = com.colors[[i]][membership(coms[[i]])]
+  plot(gs.e[[i]], layout = l, edge.width = E(gs.e[[i]])$weight*200,  vertex.label = "", vertex.size = 10, edge.color = "gray10")
+  title(paste(time.period[i], ":Modularity =", round(mods[[i]], 2)),  cex.main = 2.25)
+}
+
+dev.off()
+
+png(filename = paste(plots_path_out, 'penF.modularity.png'), width = 1024, height = 768, pointsize = 12)
+
+set.seed(2)
+par(mfrow = c(1,2))
+
+
+for(i in 1:2){
+  l = layout_with_fr(gs.d[[i]])
+  V(gs.f[[i]])$color = com.colors[[i]][membership(coms[[i]])]
+  plot(gs.f[[i]], layout = l, edge.width = E(gs.f[[i]])$weight*200,  vertex.label = "", vertex.size = 10, edge.color = "gray10")
+  title(paste(time.period[i], ":Modularity =", round(mods[[i]], 2)),  cex.main = 2.25)
+}
+
+dev.off()
 ####testing against null model###
 gbi=t(m.list.d[[1]])
 gbi=t(m.list.e[[1]])
@@ -248,8 +295,8 @@ p
 
 ###try serial method###
 
-gbi2=t(m.list.d[[1]])
-gbi2=t(m.list.e[[1]])
+gbi2 = t(m.list.d[[1]])
+gbi2 = t(m.list.e[[1]])
 gbi2 = t(m.list.f[[1]])
 assoc2=get_network(gbi2)
 
