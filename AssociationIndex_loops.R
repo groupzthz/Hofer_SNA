@@ -2,7 +2,7 @@
 library("data.table")
 # Time manipulation
 library("lubridate")
-# Mapping vector values
+# Data manipulation and SNA
 library("plyr")
 library("tidyverse")
 library("asnipe")
