@@ -9,13 +9,13 @@ library("asnipe")
 library("igraph")
 library("sna")
 library("here")
-getwd()
+
 
 list.files()
 
 
 plots_path_out = 'C:\\Users\\matthew\\Desktop\\Hofer_SNA\\plots\\'
-
+data_path_out = 'C:\\Users\\matthew\\Desktop\\Hofer_SNA\\processed data\\'
 
 # Loading the data for Pen D
 dat <- 
@@ -26,69 +26,16 @@ dat <-
 dat <- dat %>% 
   mutate(time2 = as_date(TimeStamp))
 
-min(dat$time2)
-
-dat.1.test <- dat %>% 
-  filter(time2 == min(time2))
-
-###getting in long format 
-?pivot_longer
-
-
-n1 = pivot_longer(dat.1.test.1, cols = c(2:16), names_to = "bird.id", values_to = "ant.id", values_drop_na = TRUE)
-n1 <- n1 %>% 
-  group_by(TimeStamp) %>% 
-  mutate(id = row_number())
-
-n2 = pivot_wider(n1, names_from = "id", values_from = "bird.id")
-
-bird.id = unique(gather(n2[,5:12])$value)
-bird.id
-
-bird.id = bird.id[is.na(bird.id) == F]
-bird.id
-
-m1 = apply(n2[,4:12], 1, function(x) match(bird.id, x))
-m1
-
-m1[is.na(m1)] = 0
-m1[m1>0] = 1
-
-m1
-rownames(m1) = bird.id
-colnames(m1) = paste('group', 1:ncol(m1), sep = "_")
-m1
-
-
-adj = get_network(t(m1), data_format = "GBI", association_index = "SRI")
-
-
-g = graph_from_adjacency_matrix(adj, "undirected", weighted = T)
-
-set.seed(2)
-plot(g, edge.width = E(g)$weight*10, vertex.label = "", vertex.size = 5)
-a1 = as.data.frame(adj)
 dat.1 <-  dat %>% 
   filter(time2  <= (min(time2)+5))
 
 dat.2 <-  dat %>% 
   filter(time2  > (min(time2)+5))
 
-write.csv(dat.1,paste(path_out, 'rawPenD.1.csv'))
-write.csv(dat.2,paste(path_out, 'rawPenD.2.csv'))
+write.csv(dat.1,paste(data_path_out, 'rawPenD.1.csv'))
+write.csv(dat.2,paste(data_path_out, 'rawPenD.2.csv'))
 
-dat.1 <- read.csv("rawPenD.1.csv")
-dat.2 <- read.csv("rawPenD.2.csv")
 
-summary(dat.1)
-
-###need to take off the first column if uploading from saved csv file###
-dat.1 <- dat.1[,-1]
-dat.2 <- dat.2[,-1]
-
-names(dat.1)
-
-par(default)
 dat.pen.e <- 
   list.files(pattern = "*\\.csv") %>% 
   map_df(~read.csv2(., na.strings = c("", "NA")))
@@ -103,8 +50,8 @@ dat.e.1 <- dat.pen.e %>%
 dat.e.2 <- dat.pen.e %>% 
   filter(time1 > (min(time1) + 5))
 
-write.csv(dat.e.1,paste(path_out, 'rawPenE.1.csv'))
-write.csv(dat.e.2,paste(path_out, 'rawPenE.2.csv'))
+write.csv(dat.e.1,paste(data_path_out, 'rawPenE.1.csv'))
+write.csv(dat.e.2,paste(data_path_out, 'rawPenE.2.csv'))
 
 dat.e.1 <- read.csv("rawPenE.1.csv")
 dat.e.2 <- read.csv("rawPenE.2.csv")
@@ -126,8 +73,21 @@ dat.f.1 <- dat.pen.f %>%
 dat.f.2 <- dat.pen.f %>% 
   filter(time1 > (min(time1) + 5))
 
-write.csv(dat.f.1,paste(path_out, 'rawPenF.1.csv'))
-write.csv(dat.f.2,paste(path_out, 'rawPenF.2.csv'))
+write.csv(dat.f.1,paste(data_path_out, 'rawPenF.1.csv'))
+write.csv(dat.f.2,paste(data_path_out, 'rawPenF.2.csv'))
+
+###need to take off the first column if uploading from saved csv file###
+dat.1 <- read.csv("rawPenD.1.csv")
+dat.2 <- read.csv("rawPenD.2.csv")
+
+dat.1 <- dat.1[,-1]
+dat.2 <- dat.2[,-1]
+
+dat.e.1 <- read.csv("rawPenE.1.csv")
+dat.e.2 <- read.csv("rawPenE.2.csv")
+
+dat.e.1 <- dat.e.1[, -1]
+dat.e.2 <- dat.e.2[, -1]
 
 
 dat.f.1 <- read.csv("rawPenF.1.csv")
