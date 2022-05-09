@@ -154,6 +154,8 @@ m.list.f = lapply(d.dat.f, function(x){
   
 })
 
+###get network with asnipe package using simple association###
+
 adjs.d = lapply(m.list.d, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
 
 adjs.e = lapply(m.list.e, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
@@ -161,6 +163,8 @@ adjs.e = lapply(m.list.e, function(x) get_network(t(x), data_format = "GBI", ass
 adjs.f = lapply(m.list.f, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
 
 adjs
+
+###making graphs between different time periods###
 
 gs.d = lapply(adjs.d, function(x) graph_from_adjacency_matrix(x, "undirected", weighted = T))
 
@@ -180,11 +184,16 @@ for(i in 1:2){
   plot(gs.f[[i]], edge.width = E(gs.f[[i]])$weight*200, vertex.label = "", vertex.color = "gold1", vertex.size = 10, edge.color = "gray10", main = paste(time.period[i]))
 }
 
+###making clusters and looking at modularity using cluster_fast_greedy- could use something else, but apparently works well with small samples###
+
 coms = lapply(gs.d, function(x) cluster_fast_greedy(x))
 coms = lapply(gs.e, function(x) cluster_fast_greedy(x))
 coms = lapply(gs.f, function(x) cluster_fast_greedy(x))
 
 mods = sapply(coms, modularity)
+
+###changing color because node order changes- need to look into this more###
+###also do we want the vertex label (HenID) in graph? would need to change cex###
 
 com.colors = list(c("blue", "yellow", "green", "red"), c( "green",  "blue", "red", "yellow"))
 
@@ -232,7 +241,8 @@ for(i in 1:2){
 }
 
 dev.off()
-####testing against null model###
+
+####testing modularity against null model overall with 1000 swaps###
 gbi=t(m.list.d[[1]])
 gbi=t(m.list.e[[1]])
 gbi=t(m.list.f[[1]])
@@ -279,11 +289,14 @@ pen.global.serial <- cbind(pen, global_p, serial_p)
 
 pen.global.serial <- as.data.frame(pen.global.serial)
 
-###check across time points
-install.packages("ecodist")
+###check across time points with mantel test - are matrices the same or different###
+###using ecodist, but maybe vegan###
+
 library(ecodist)
 
-#restrict comparison to individuals that were seen in two sequential years 
+#restrict comparison to individuals that were seen in two time periods - don't really need to do this I think as we only have the same 15###
+###good practice though###
+
 id12=rownames(adjs[[1]])[rownames(adjs[[1]])%in%rownames(adjs[[2]])] #get IDs of birds that were present in both networks
 ids.m1=match(id12,rownames(adjs[[1]])) #get row/columns of those individuals in matrix 1 
 ids.m2=match(id12,rownames(adjs[[2]])) #get row/colums of those individuals in matrix 2
@@ -295,7 +308,7 @@ mantel12=mantel(as.dist(m12)~as.dist(m21))
 mantel12
 
 
-#restrict comparison to individuals that were seen in two sequential years 
+#restrict comparison to individuals that were seen in two time periods 
 id12=rownames(adjs.f[[1]])[rownames(adjs.f[[1]])%in%rownames(adjs.f[[2]])] #get IDs of birds that were present in both networks
 ids.m1=match(id12,rownames(adjs.f[[1]])) #get row/columns of those individuals in matrix 1 
 ids.m2=match(id12,rownames(adjs.f[[2]])) #get row/colums of those individuals in matrix 2
@@ -307,7 +320,7 @@ mantel12=mantel(as.dist(m12)~as.dist(m21))
 mantel12
 
 
-#restrict comparison to individuals that were seen in two sequential years 
+#restrict comparison to individuals that were seen in two time periods
 id12=rownames(adjs.f[[1]])[rownames(adjs.f[[1]])%in%rownames(adjs.f[[2]])] #get IDs of birds that were present in both networks
 ids.m1=match(id12,rownames(adjs.f[[1]])) #get row/columns of those individuals in matrix 1 
 ids.m2=match(id12,rownames(adjs.f[[2]])) #get row/colums of those individuals in matrix 2
@@ -514,36 +527,6 @@ palette <- distinctColorPalette(n)
 
 
 plot(net_graph, vertex.color = palette, vertex.size = 3, vertex.label = NA, mark.groups = communities)
-####OTHER METHODS####
-n <- seq_len(ncol(df1.1))
-
-
-#make combinations
-id <- expand.grid(n, n)
-
-##make associations
-g.1 <- sum(ifelse(df1.1[, id[1,1]] == df1.1[, id[1,2]], 1, 0), na.rm = T)
-h.1 <- length(df1.1[, id[1,1]][!is.na(df1.1[, id[1,1]])])
-i.1 <- length(df1.1[, id[1,2]][!is.na(df1.1[, id[1,2]])])
-
-ai <- g.1/(h.1 + i.1 - g.1)
-
-g <- sum(ifelse(df1.1[,1]==df1.1[,1], 1,0), na.rm=T)
-h <- length(df1.1[,id[,1][!is.na(df1.1[,id[,1]])]])
-
-out <- matrix(ai, ncol = length(n))
-
-cor.matrix <- apply(df1.1, 2, function(x))
-
-g=sum(ifelse(df1.1$DAB==df1.1$DCD, 1,0), na.rm=T)
-
-
-
-h <- length(df1.1$DCD[!is.na(df1.1$DCD)])
-i <- length(df1.1$DAB[!is.na(df1.1$DAB)])
-
-ai <- g/(h + i - g)
-ai
 
 
 ###new method###
@@ -584,28 +567,3 @@ for(i in 1:ncol(df1.2)){
 try <- get.ai(df1.1)
 
 
-flockdat=read.csv('Flock_Season2_Dryad.csv')
-
-birdcols=grep("Bird",colnames(flockdat))
-birdcols
-
-flockdat[,birdcols]
-
-gather(flockdat[,birdcols])
-
-bird.ids=bird.ids[is.na(bird.ids)==F]
-bird.ids
-
-m1=apply(flockdat[,birdcols], 1, function(x) match(bird.ids,x))
-m1
-
-m1[is.na(m1)]=0
-m1[m1>0]=1
-m1
-
-rownames(m1)=bird.ids #rows are bird ids
-colnames(m1)=paste('flock', 1:ncol(m1), sep="_") #columns are flock IDs (just "flock_#")
-m1
-
-adj=get_network(t(m1), data_format="GBI", association_index = "SRI") # the adjacency matrix
-adj.1 <- as.data.frame(adj)
