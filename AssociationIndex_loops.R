@@ -77,21 +77,23 @@ write.csv(dat.f.1,paste(data_path_out, 'rawPenF.1.csv'))
 write.csv(dat.f.2,paste(data_path_out, 'rawPenF.2.csv'))
 
 ###need to take off the first column if uploading from saved csv file###
-dat.1 <- read.csv("rawPenD.1.csv")
-dat.2 <- read.csv("rawPenD.2.csv")
+dat.1 <- read.csv("processed data/rawPenD.1.csv")
+dat.2 <- read.csv("processed data/rawPenD.2.csv")
 
 dat.1 <- dat.1[,-1]
 dat.2 <- dat.2[,-1]
 
-dat.e.1 <- read.csv("rawPenE.1.csv")
-dat.e.2 <- read.csv("rawPenE.2.csv")
+summary(dat.1)
+
+dat.e.1 <- read.csv("processed data/rawPenE.1.csv")
+dat.e.2 <- read.csv("processed data/rawPenE.2.csv")
 
 dat.e.1 <- dat.e.1[, -1]
 dat.e.2 <- dat.e.2[, -1]
 
 
-dat.f.1 <- read.csv("rawPenF.1.csv")
-dat.f.2 <- read.csv("rawPenF.2.csv")
+dat.f.1 <- read.csv("processed data/rawPenF.1.csv")
+dat.f.2 <- read.csv("processed data/rawPenF.2.csv")
 
 
 dat.f.1 <- dat.f.1[, -1]
