@@ -284,7 +284,7 @@ p
 ###putting variables together for results
 
 pen <-  c("D", "E", "F")
-global_p <- c("0.059", "0.010", "0.010")
+global_p <- c("0.059", "0.0079", "0.010")
 serial_p <- c("0.002", "0.0001", "0.00003")
 
 pen.global.serial <- cbind(pen, global_p, serial_p)
