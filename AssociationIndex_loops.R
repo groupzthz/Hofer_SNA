@@ -236,7 +236,7 @@ par(mfrow = c(1,2))
 
 
 for(i in 1:2){
-  l = layout_with_fr(gs.d[[i]])
+  l = layout_with_fr(gs.f[[i]])
   V(gs.f[[i]])$color = com.colors[[i]][membership(coms[[i]])]
   plot(gs.f[[i]], layout = l, edge.width = E(gs.f[[i]])$weight*200,  vertex.label = "", vertex.size = 10, edge.color = "gray10")
   title(paste(time.period[i], ":Modularity =", round(mods[[i]], 2)),  cex.main = 2.25)
@@ -247,7 +247,7 @@ dev.off()
 ####testing modularity against null model overall with 1000 swaps###
 gbi=t(m.list.d[[1]])
 gbi=t(m.list.e[[1]])
-gbi=t(m.list.f[[1]])
+gbi=t(m.list.f[[1]]) 
 
 swap.m=list() 
 
@@ -284,8 +284,8 @@ p
 ###putting variables together for results
 
 pen <-  c("D", "E", "F")
-global_p <- c("0.059", "0.0079", "0.010")
-serial_p <- c("0.002", "0.0001", "0.00003")
+global_p <- c("0.059", "0.0079", "0.002")
+serial_p <- c("<0.001", "<0.001", "<0.001")
 
 pen.global.serial <- cbind(pen, global_p, serial_p)
 
