@@ -8,8 +8,8 @@ library("tidyverse")
 library("asnipe")
 library("igraph")
 library("sna")
-library("here")
 
+install.packages("plyr")
 
 list.files()
 
@@ -569,3 +569,11 @@ for(i in 1:ncol(df1.2)){
 try <- get.ai(df1.1)
 
 
+####Try with ANTS r package and see if we get similar results####
+install.packages("devtools")
+devtools::install_github('SebastianSosa/ANTs')
+
+library(devtools)
+install_github("SebastianSosa/ANTs")
+Sys.setenv(LANG = "eng")
+library(ANTs)
