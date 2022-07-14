@@ -8,6 +8,7 @@ library("tidyverse")
 library("asnipe")
 library("igraph")
 library("sna")
+library("ANTs")
 
 install.packages("plyr")
 
@@ -264,7 +265,11 @@ abline(v=mods[[1]], col="red", lty=2, lwd=2)
 p=(length(which(mod.swap>=mods[[1]]))+1)/(times+1)
 p
 
+?erdos.renyi.game
+x <- names(dat.1)
+x <- x[-16]
 
+get.edge.ids(gs.d[[1]], vp = x)
 ###try serial method###
 
 gbi2 = t(m.list.d[[1]])
@@ -280,7 +285,7 @@ hist(mod.swap2,xlim=c(min(mod.swap2), mods[[1]]), main="Serial Method")
 abline(v=mods[[1]], col="red", lty=2, lwd=2) 
 p=(length(which(mod.swap2>=mods[[1]]))+1)/100001
 p
-
+edge.attributes(gs.d[[1]], index = E(gs.d[[1]]))
 ###putting variables together for results
 
 pen <-  c("D", "E", "F")
@@ -577,3 +582,49 @@ library(devtools)
 install_github("SebastianSosa/ANTs")
 Sys.setenv(LANG = "eng")
 library(ANTs)
+
+####converting dat.1 for pen D into gbi ####
+
+summary(dat.1)
+
+  n1 = pivot_longer(dat.1, cols = c(2:16), names_to = "bird.id", values_to = "ant.id", values_drop_na = TRUE)
+  n1 <- n1 %>% 
+    group_by(TimeStamp) %>% 
+    mutate(id = row_number())
+  n2 = pivot_wider(n1, names_from = "id", values_from = "bird.id")
+  bird.id = unique(gather(n2[,4:ncol(n2)])$value)
+  bird.id = bird.id[is.na(bird.id) == F]
+  m1 = apply(n2[,4:ncol(n2)], 1, function(x) match(bird.id, x))
+  m1[is.na(m1)] = 0
+  m1[m1>0] = 1
+  rownames(m1) = bird.id
+  colnames(m1) = paste('group', 1:ncol(m1), sep = "_")
+  m1
+  
+})
+
+m2 <- t(m1)
+
+row.names(m2) = 1:nrow(m2)
+colnames(m2) = 1:ncol(m2)
+
+df = ANTs::gbi.to.df(m2)
+
+pre.net = perm.ds.grp(df, scan = 'scan', nperm = 1000, progress = TRUE, index = 'sri')
+
+
+
+save.image(file = "pre.net.RData")
+
+load(file = "pre.net.RData")
+
+test <- met.strength(pre.net[[1]])
+test
+
+
+RR1 <- list()
+for(i in 1:1000) {
+  RR1[[i]] <- erdos.renyi.game(15,105,type=c("gnm"),directed=FALSE,loops=FALSE)
+}
+
+x <- edge.attributes(RR1[[1]], index = E(RR1[[1]]))
