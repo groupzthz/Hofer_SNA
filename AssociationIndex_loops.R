@@ -628,3 +628,10 @@ for(i in 1:1000) {
 }
 
 x <- edge.attributes(RR1[[1]], index = E(RR1[[1]]))
+
+
+
+
+####new associations pre-transition###
+
+dat <- read.csv()
