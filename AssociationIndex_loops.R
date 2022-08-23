@@ -10,22 +10,26 @@ library("igraph")
 library("sna")
 library("ANTs")
 
-install.packages("plyr")
 
+###checking which files I have
 list.files()
 
-
+#paths for plots and data after cleaning
 plots_path_out = 'C:\\Users\\matthew\\Desktop\\Hofer_SNA\\plots\\'
 data_path_out = 'C:\\Users\\matthew\\Desktop\\Hofer_SNA\\processed data\\'
 
-# Loading the data for Pen D
+# Loading the data for all pens - starting with Pen D
+
 dat <- 
   list.files(pattern = "*.csv") %>% 
   map_df(~read.csv2(., na.strings=c("", "NA")))
 
+#change to date
 
 dat <- dat %>% 
   mutate(time2 = as_date(TimeStamp))
+
+#dividing into time points
 
 dat.1 <-  dat %>% 
   filter(time2  <= (min(time2)+5))
@@ -33,10 +37,12 @@ dat.1 <-  dat %>%
 dat.2 <-  dat %>% 
   filter(time2  > (min(time2)+5))
 
+#save to processed data
+
 write.csv(dat.1,paste(data_path_out, 'rawPenD.1.csv'))
 write.csv(dat.2,paste(data_path_out, 'rawPenD.2.csv'))
 
-
+#Pen E
 dat.pen.e <- 
   list.files(pattern = "*\\.csv") %>% 
   map_df(~read.csv2(., na.strings = c("", "NA")))
@@ -51,15 +57,17 @@ dat.e.1 <- dat.pen.e %>%
 dat.e.2 <- dat.pen.e %>% 
   filter(time1 > (min(time1) + 5))
 
+#save to processed data
+
 write.csv(dat.e.1,paste(data_path_out, 'rawPenE.1.csv'))
 write.csv(dat.e.2,paste(data_path_out, 'rawPenE.2.csv'))
-
+ 
+#restarted and loading data-load from processed data
 dat.e.1 <- read.csv("rawPenE.1.csv")
 dat.e.2 <- read.csv("rawPenE.2.csv")
 
-dat.e.1 <- dat.e.1[, -1]
-dat.e.2 <- dat.e.2[, -1]
 
+#Pen F
 dat.pen.f <- 
   list.files(pattern = "*\\.csv") %>% 
   map_df(~read.csv2(., na.strings = c("", "NA")))
@@ -84,14 +92,17 @@ dat.2 <- read.csv("processed data/rawPenD.2.csv")
 dat.1 <- dat.1[,-1]
 dat.2 <- dat.2[,-1]
 
-summary(dat.1)
+names(dat.1)
+#d.name will be used below when we need to get rid of extra individuals from pre-transition (we only want the 15 birds post-transition)
+d.name <- names(dat.1[, -1])
 
 dat.e.1 <- read.csv("processed data/rawPenE.1.csv")
 dat.e.2 <- read.csv("processed data/rawPenE.2.csv")
 
 dat.e.1 <- dat.e.1[, -1]
 dat.e.2 <- dat.e.2[, -1]
-
+names(dat.e.1)
+e.name <- names(dat.e.1[, -1])
 
 dat.f.1 <- read.csv("processed data/rawPenF.1.csv")
 dat.f.2 <- read.csv("processed data/rawPenF.2.csv")
@@ -99,12 +110,15 @@ dat.f.2 <- read.csv("processed data/rawPenF.2.csv")
 
 dat.f.1 <- dat.f.1[, -1]
 dat.f.2 <- dat.f.2[, -1]
+names(dat.f.1)
+f.name <- names(dat.f.1[, -1])
 
-####doing multiple time periods within a pen#####
+####lumping multiple time periods within a pen and doing functions to make faster#####
 d.dat.d <- list(dat.1, dat.2)
 d.dat.e <- list(dat.e.1, dat.e.2)
 d.dat.f <- list(dat.f.1, dat.f.2)
 
+#takes lists and creates a individual by group matrix, also known as GBI
 m.list.d = lapply(d.dat.d, function(x){
   n1 = pivot_longer(x, cols = c(2:16), names_to = "bird.id", values_to = "ant.id", values_drop_na = TRUE)
   n1 <- n1 %>% 
@@ -158,16 +172,18 @@ m.list.f = lapply(d.dat.f, function(x){
 })
 
 ###get network with asnipe package using simple association###
+#Pen D
 
 adjs.d = lapply(m.list.d, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
-
+adjs.d[1]
+#Pen E
 adjs.e = lapply(m.list.e, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
 
+#Pen F
 adjs.f = lapply(m.list.f, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
 
-adjs
 
-###making graphs between different time periods###
+###making SNA graphs between different time periods###
 
 gs.d = lapply(adjs.d, function(x) graph_from_adjacency_matrix(x, "undirected", weighted = T))
 
@@ -175,6 +191,7 @@ gs.e = lapply(adjs.e, function(x) graph_from_adjacency_matrix(x, "undirected", w
 
 gs.f = lapply(adjs.f, function(x) graph_from_adjacency_matrix(x, "undirected", weighted = T))
 
+#actual node graphs
 time.period = c("1-5 days", "20-25 days")
 default = par()
 par(mfrow = c(1,2))
@@ -184,33 +201,41 @@ for(i in 1:2){
 }
 
 for(i in 1:2){
+  plot(gs.e[[i]], edge.width = E(gs.e[[i]])$weight*200, vertex.label = "", vertex.color = "gold1", vertex.size = 10, edge.color = "gray10", main = paste(time.period[i]))
+}
+
+for(i in 1:2){
   plot(gs.f[[i]], edge.width = E(gs.f[[i]])$weight*200, vertex.label = "", vertex.color = "gold1", vertex.size = 10, edge.color = "gray10", main = paste(time.period[i]))
 }
 
 ###making clusters and looking at modularity using cluster_fast_greedy- could use something else, but apparently works well with small samples###
 
-coms = lapply(gs.d, function(x) cluster_fast_greedy(x))
-coms = lapply(gs.e, function(x) cluster_fast_greedy(x))
-coms = lapply(gs.f, function(x) cluster_fast_greedy(x))
+coms.d = lapply(gs.d, function(x) cluster_fast_greedy(x))
+coms.e = lapply(gs.e, function(x) cluster_fast_greedy(x))
+coms.f = lapply(gs.f, function(x) cluster_fast_greedy(x))
 
-mods = sapply(coms, modularity)
+mods.d = sapply(coms.d, modularity)
+mods.e = sapply(coms.e, modularity)
+mods.f = sapply(coms.f, modularity)
 
 ###changing color because node order changes- need to look into this more###
-###also do we want the vertex label (HenID) in graph? would need to change cex###
+###also do we want the vertex label (HenID) in graph? would need to change cex maybe###
 
 com.colors = list(c("blue", "yellow", "green", "red"), c( "green",  "blue", "red", "yellow"))
 
+###save files to plots folder
 png(filename = paste(plots_path_out, 'penD.modularity.png'), width = 1024, height = 768, pointsize = 12)
 
+#set seed for reproducability
 set.seed(2)
 par(mfrow = c(1,2))
 
 
 for(i in 1:2){
   l = layout_with_fr(gs.d[[i]])
-  V(gs.d[[i]])$color = com.colors[[i]][membership(coms[[i]])]
+  V(gs.d[[i]])$color = com.colors[[i]][membership(coms.d[[i]])]
   plot(gs.d[[i]], layout = l, edge.width = E(gs.d[[i]])$weight*200,  vertex.label = "", vertex.size = 10, edge.color = "gray10")
-  title(paste(time.period[i], ":Modularity =", round(mods[[i]], 2)),  cex.main = 2.25)
+  title(paste(time.period[i], ":Modularity =", round(mods.d[[i]], 2)),  cex.main = 2.25)
 }
 
 dev.off()
@@ -223,9 +248,9 @@ par(mfrow = c(1,2))
 
 for(i in 1:2){
   l = layout_with_fr(gs.e[[i]])
-  V(gs.e[[i]])$color = com.colors[[i]][membership(coms[[i]])]
+  V(gs.e[[i]])$color = com.colors[[i]][membership(coms.e[[i]])]
   plot(gs.e[[i]], layout = l, edge.width = E(gs.e[[i]])$weight*200,  vertex.label = "", vertex.size = 10, edge.color = "gray10")
-  title(paste(time.period[i], ":Modularity =", round(mods[[i]], 2)),  cex.main = 2.25)
+  title(paste(time.period[i], ":Modularity =", round(mods.e[[i]], 2)),  cex.main = 2.25)
 }
 
 dev.off()
@@ -234,18 +259,23 @@ png(filename = paste(plots_path_out, 'penF.modularity.png'), width = 1024, heigh
 
 set.seed(2)
 par(mfrow = c(1,2))
-
-
 for(i in 1:2){
   l = layout_with_fr(gs.f[[i]])
-  V(gs.f[[i]])$color = com.colors[[i]][membership(coms[[i]])]
+  V(gs.f[[i]])$color = com.colors[[i]][membership(coms.f[[i]])]
   plot(gs.f[[i]], layout = l, edge.width = E(gs.f[[i]])$weight*200,  vertex.label = "", vertex.size = 10, edge.color = "gray10")
-  title(paste(time.period[i], ":Modularity =", round(mods[[i]], 2)),  cex.main = 2.25)
+  title(paste(time.period[i], ":Modularity =", round(mods.f[[i]], 2)),  cex.main = 2.25)
 }
 
 dev.off()
 
-####testing modularity against null model overall with 1000 swaps###
+
+com=fastgreedy.community(g) #community detection method
+node.colors=membership(com) #assign node color based on community membership
+set.seed(2)
+plot(g, edge.width=E(g)$weight*10, vertex.label="", vertex.size=5, vertex.color=node.colors)
+
+####testing modularity against null model overall with 1000 swaps - do 1 at a time###
+#start with gbi for d and then do the swaps, repeat gbi with e than f
 gbi=t(m.list.d[[1]])
 gbi=t(m.list.e[[1]])
 gbi=t(m.list.f[[1]]) 
@@ -265,12 +295,9 @@ abline(v=mods[[1]], col="red", lty=2, lwd=2)
 p=(length(which(mod.swap>=mods[[1]]))+1)/(times+1)
 p
 
-?erdos.renyi.game
-x <- names(dat.1)
-x <- x[-16]
 
-get.edge.ids(gs.d[[1]], vp = x)
 ###try serial method###
+#same as above- do one pen and then the next
 
 gbi2 = t(m.list.d[[1]])
 gbi2 = t(m.list.e[[1]])
@@ -304,11 +331,11 @@ library(ecodist)
 #restrict comparison to individuals that were seen in two time periods - don't really need to do this I think as we only have the same 15###
 ###good practice though###
 
-id12=rownames(adjs[[1]])[rownames(adjs[[1]])%in%rownames(adjs[[2]])] #get IDs of birds that were present in both networks
-ids.m1=match(id12,rownames(adjs[[1]])) #get row/columns of those individuals in matrix 1 
-ids.m2=match(id12,rownames(adjs[[2]])) #get row/colums of those individuals in matrix 2
-m12=adjs[[1]][ids.m1,ids.m1] #matrix 1 of association indices of only returning individuals
-m21=adjs[[2]][ids.m2,ids.m2] #matrix 2 of association indices of only returning individuals
+id12=rownames(adjs.d[[1]])[rownames(adjs.d[[1]])%in%rownames(adjs.d[[2]])] #get IDs of birds that were present in both networks
+ids.m1=match(id12,rownames(adjs.d[[1]])) #get row/columns of those individuals in matrix 1 
+ids.m2=match(id12,rownames(adjs.d[[2]])) #get row/colums of those individuals in matrix 2
+m12=adjs.d[[1]][ids.m1,ids.m1] #matrix 1 of association indices of only returning individuals
+m21=adjs.d[[2]][ids.m2,ids.m2] #matrix 2 of association indices of only returning individuals
 m12=m12[order(rownames(m12)),order(rownames(m12))] #reorder the rows/columns by alphanumeric order
 m21=m21[order(rownames(m21)),order(rownames(m21))] #reorder the rows/columns by alphanumeric order
 mantel12=mantel(as.dist(m12)~as.dist(m21)) 
@@ -316,11 +343,11 @@ mantel12
 
 
 #restrict comparison to individuals that were seen in two time periods 
-id12=rownames(adjs.f[[1]])[rownames(adjs.f[[1]])%in%rownames(adjs.f[[2]])] #get IDs of birds that were present in both networks
-ids.m1=match(id12,rownames(adjs.f[[1]])) #get row/columns of those individuals in matrix 1 
-ids.m2=match(id12,rownames(adjs.f[[2]])) #get row/colums of those individuals in matrix 2
-m12=adjs.f[[1]][ids.m1,ids.m1] #matrix 1 of association indices of only returning individuals
-m21=adjs.f[[2]][ids.m2,ids.m2] #matrix 2 of association indices of only returning individuals
+id12=rownames(adjs.e[[1]])[rownames(adjs.e[[1]])%in%rownames(adjs.e[[2]])] #get IDs of birds that were present in both networks
+ids.m1=match(id12,rownames(adjs.e[[1]])) #get row/columns of those individuals in matrix 1 
+ids.m2=match(id12,rownames(adjs.e[[2]])) #get row/colums of those individuals in matrix 2
+m12=adjs.e[[1]][ids.m1,ids.m1] #matrix 1 of association indices of only returning individuals
+m21=adjs.e[[2]][ids.m2,ids.m2] #matrix 2 of association indices of only returning individuals
 m12=m12[order(rownames(m12)),order(rownames(m12))] #reorder the rows/columns by alphanumeric order
 m21=m21[order(rownames(m21)),order(rownames(m21))] #reorder the rows/columns by alphanumeric order
 mantel12=mantel(as.dist(m12)~as.dist(m21)) 
@@ -339,35 +366,11 @@ mantel12=mantel(as.dist(m12)~as.dist(m21))
 mantel12
 
 
-###Potenial way to get pearson correlation
-install.packages("vcd")
-library(vcd)
-
-
-df1 <- read.csv2("exampleData.csv", na.strings=c("", "NA"))
-
-df1.1 <- df1[,2:16]
-
-empty_m <- matrix(ncol = length(df1.1),
-                  nrow = length(df1.1),
-                  dimnames = list(names(df1.1),
-                                  names(df1.1)))
-
-
-calculate_cramer <- function(m, df) {
-  for (r in seq(nrow(m))){
-    for (c in seq(ncol(m))){
-      m[[r, c]] <- assocstats(table(df[[r]], df[[c]]))$cramer
-    }
-  }
-  return(m)
-}
-
-cor_matrix <- calculate_cramer(empty_m ,df1.1)
-
-
+###Potenial way to get pearson correlation###
+#DO NOT USE THIS-JUST PRACTICE WITH SRI AND MATRICES
 
 ####this works use this if can't figure out other way
+#PRACTICE WITH GBI
 dat.1.test <- dat.1.test[,2:16]
 
 
@@ -379,6 +382,8 @@ date.2 <- dat.e.2[,2:16]
 
 datf.1 <- dat.f.1[,2:16]
 datf.2 <- dat.f.2[,2:16]
+
+#create null matrix to fill with associations
 newdata=as.data.frame(matrix(ncol=ncol(df1.1), nrow=ncol(df1.1)))
 
 for (c in 1:ncol(df1.1)){
@@ -406,6 +411,8 @@ n <- c(names(df1.1))
 
 names(newdata) <- n
 rownames(newdata) <- n
+
+##make into function
 
 get.ai <- function(y) {
   col.y <- ncol(y)
@@ -459,6 +466,7 @@ aiPenD.1 <- read.csv2(" aiPenD.1.csv", sep = ",")
 aiPenD.2 <- read.csv2(" aiPenD.2.csv", sep = ",")
 
 list.files()
+
 aiPenD.1 <- as.matrix(aiPenD.1)
 x <- aiPenD.1[,1]
 
@@ -475,18 +483,8 @@ aiPenD.1 <- aiPenD.1[order(rownames(aiPenD.1)), order(rownames(aiPenD.1))]
 aiPenD.2 <- aiPenD.2[order(rownames(aiPenD.2)), order(rownames(aiPenD.2))]
 mand <- mantel(as.dist(aiPenD.1) ~ as.dist(aiPenD.2))
 mand
-####try to get network using asnipe###
 
-install.packages("asnipe")
-install.packages("sna")
-install.packages("igraph")
-install.packages("randomcoloR")
-
-library("sna")
-library("asnipe")
-library("igraph")
-library("randomcoloR")
-
+###Do not use###
 aiPenD.1 <- aiPenD.1[,2:16]
 netd.1 <- get_network(aiPend.1)
 
@@ -536,42 +534,6 @@ palette <- distinctColorPalette(n)
 plot(net_graph, vertex.color = palette, vertex.size = 3, vertex.label = NA, mark.groups = communities)
 
 
-###new method###
-
-library(tidyverse)
-install.packages("lsr")
-library(lsr)
-?table
-
-f = function(x,y) {
-  b = df1.1 %>% select(x,y) %>% table(useNA = "ifany") 
-  b = as.data.frame(b)
-  g = sum(ifelse(b$x == b$y, 1, 0), na.rm = T)
-  data.frame(x, y, g)}
-  h = length(b.t$x[!is.na(b.t$x)])
-  i = length(b.t$y[!is.na(b.t$y)])
-  ai = g/(h +i - g)
-  data.frame(x, y, g, h, i, ai)
-}
-
-df_comb = data.frame(t(combn(sort(names(df1.1)), 2)), stringsAsFactors = F)
-
-df_res = map2_df(df_comb$X1, df_comb$X2, f)
-
-
-
-col.y <- ncol(df1.2)
-V <- matrix(ncol = col.y, nrow = col.y)
-for(i in 1:ncol(df1.2)){
-  for(j in 1:ncol(df1.2)){
-    g <- sum(ifelse(i == j, 1, 0), na.rm = T)
-    h <- length(i[!is.na(i)])
-    p <- length(j[!is.na(j)])
-    ai <- g/(h + p -g)
-    V[i,j] <- ai
-  }
-}
-try <- get.ai(df1.1)
 
 
 ####Try with ANTS r package and see if we get similar results####
@@ -634,4 +596,512 @@ x <- edge.attributes(RR1[[1]], index = E(RR1[[1]]))
 
 ####new associations pre-transition###
 
-dat <- read.csv()
+#Pen D
+
+###the names are not the same from pre-transition to post-transition. Also there are 5 fewer birds
+d.name <- d.name %>% 
+  substring(.,2)
+
+dat <- read.csv2("MarinaDataFormat1.csv", header = T, sep = ";")
+
+summary(dat)
+names(dat)
+
+dat <- dat %>% 
+  mutate(pen = as.factor(ï..Pen),
+         date = dmy(Date),
+         fa = as.factor(Focal.Animal),
+         time = hms(Time),
+         aa = as.factor(Association))
+
+dat.d.pre <- dat %>% 
+  filter(pen == "D")
+
+dat.d.pre.edge <- dat.d.pre %>% 
+  select(fa, aa)
+
+summary(dat.d.pre.edge)
+
+dat.d.pre.edge <- dat.d.pre.edge %>% 
+  filter(aa != "individual not found")
+
+dat.d.pre.edge <- dat.d.pre.edge %>% 
+  filter(aa != "")
+
+dat.d.pre.edge <- dat.d.pre.edge %>% 
+ mutate(comb = paste(fa, aa, sep = "_"))
+
+dat.d.pre.edge <- dat.d.pre.edge %>% 
+  filter(comb != "XC_XC")
+
+dat.d.pre.edge <- dat.d.pre.edge %>% 
+  select(fa, aa)
+
+dat.d.pre.edge <- dat.d.pre.edge %>% 
+  filter(aa %in% d.name)
+
+dat.d.pre.edge <- dat.d.pre.edge %>% 
+  filter(fa %in% d.name)
+
+d.d.edge <- as.matrix(dat.d.pre.edge)
+
+dat.d.g <- graph.data.frame(d.d.edge, directed = FALSE)
+a.dg <- as_adjacency_matrix(dat.d.g, 
+                             type = c("both"), 
+                             names = T, 
+                             edges = T)
+
+g.adj.d <- graph_from_adjacency_matrix(a.dg, "undirected", weighted = T)
+set.seed(123)
+plot(g.adj.d, edge.width = E(g.adj.d)$weight*0.012, vertex.color = "gold1", vertex.size = 10, edge.color = "gray10")
+title("Pen D Pre-transition",  cex.main = 2.25)
+
+try <- as.matrix(a.dg)
+###Pen E pre-transition####
+e.name <- names(dat.e.1[, -1])
+
+e.name <- e.name %>% 
+  substring(., 2)
+e.name
+dat.e.pre <- dat %>% 
+  filter(pen == "E")
+
+dat.e.pre.edge <- dat.e.pre %>% 
+  select(fa, aa)
+
+dat.e.pre.edge <- dat.e.pre.edge %>% 
+  filter(aa != "individual not found")
+
+dat.e.pre.edge <- dat.e.pre.edge %>% 
+  filter(aa != "")
+
+dat.e.pre.edge <- dat.e.pre.edge %>% 
+  filter(aa %in% e.name)
+dat.e.pre.edge <- dat.e.pre.edge %>% 
+  filter(fa %in% e.name)
+
+d.e.edge <- as.matrix(dat.e.pre.edge)
+
+dat.e.g <- graph.data.frame(d.e.edge, directed = FALSE)
+a.eg <- as_adjacency_matrix(dat.e.g, 
+                            type = c("both"), 
+                            names = T, 
+                            edges = T)
+
+g.adj.e <- graph_from_adjacency_matrix(a.eg, "undirected", weighted = T)
+set.seed(123)
+plot(g.adj.e, edge.width = E(g.adj.e)$weight*0.012, vertex.color = "gold1", vertex.size = 10, edge.color = "gray10")
+title("Pen E Pre-transition",  cex.main = 2.25)
+
+
+###Pen F pre-transition
+
+f.name <- names(dat.f.1[, -1])
+
+f.name <- f.name %>% 
+  substring(., 2)
+
+dat.f.pre <- dat %>% 
+  filter(pen == "F")
+
+dat.f.pre.edge <- dat.f.pre %>% 
+  select(fa, aa)
+
+dat.f.pre.edge <- dat.f.pre.edge %>% 
+  filter(aa != "individual not found")
+
+dat.f.pre.edge <- dat.f.pre.edge %>% 
+  filter(aa != "")
+
+dat.f.pre.edge <- dat.f.pre.edge %>% 
+  filter(aa %in% f.name)
+dat.f.pre.edge <- dat.f.pre.edge %>% 
+  filter(fa %in% f.name)
+
+d.f.edge <- as.matrix(dat.f.pre.edge)
+
+dat.f.g <- graph.data.frame(d.f.edge, directed = FALSE)
+plot(dat.f.g)
+a.fg <- as_adjacency_matrix(dat.f.g, 
+                            type = c("both"), 
+                            names = T, 
+                            edges = T)
+
+
+
+g.adj.f <- graph_from_adjacency_matrix(a.fg, "undirected", weighted = T)
+set.seed(123)
+plot(g.adj.f, edge.width = E(g.adj.f)$weight*0.012, vertex.color = "gold1", vertex.size = 10, edge.color = "gray10")
+title("Pen F Pre-transition",  cex.main = 2.25)
+
+
+coms.d = cluster_fast_greedy(g.adj.d)
+coms.e = cluster_fast_greedy(g.adj.e)
+coms.f = cluster_fast_greedy(g.adj.f)
+
+coms = lapply(gs.d, function(x) cluster_fast_greedy(x))
+coms = lapply(gs.e, function(x) cluster_fast_greedy(x))
+coms = lapply(gs.f, function(x) cluster_fast_greedy(x))
+
+mods = sapply(coms, modularity)
+mod.d = modularity(coms.d)
+mod.d
+node.colors=membership(coms) #assign node color based on community membership
+set.seed(123)
+plot(g.adj.d, edge.width=E(g.adj.d)$weight*0.012, vertex.size=10, vertex.color=node.colors, edge.color = "gray10")
+
+
+l=layout_with_fr(g.adj.d)
+V(g.adj.d)$color=node.colors
+plot(g.adj.d, layout=l, edge.width=E(g.adj.d)$weight*0.012, vertex.size=10,edge.color="gray10", main=paste("Pen D Pre-transition", ": Modularity=", round(modularity(coms), 2)))
+
+node.colors=membership(coms.e) #assign node color based on community membership
+set.seed(123)
+plot(g.adj.d, edge.width=E(g.adj.d)$weight*0.012, vertex.size=10, vertex.color=node.colors, edge.color = "gray10")
+
+
+l=layout_with_fr(g.adj.e)
+V(g.adj.e)$color=node.colors
+plot(g.adj.e, layout=l, edge.width=E(g.adj.e)$weight*0.012, vertex.size=10,edge.color="gray10", main=paste("Pen E Pre-transition", ": Modularity=", round(modularity(coms.e), 2)))
+
+
+node.colors=membership(coms.f) #assign node color based on community membership
+set.seed(123)
+l=layout_with_fr(g.adj.f)
+V(g.adj.f)$color=node.colors
+plot(g.adj.f, layout=l, edge.width=E(g.adj.f)$weight*0.012, vertex.size=10,edge.color="gray10", main=paste("Pen E Pre-transition", ": Modularity=", round(modularity(coms.e), 2)))
+
+###testing modularity
+df = ANTs::gbi.to.df(gbi)
+
+pre.net = perm.ds.grp(df, scan = 'scan', nperm = 1000, progress = TRUE, index = 'sri')
+
+pre.net
+
+
+
+gbi=t(try)
+gbi=t(m.list.e[[1]])
+gbi=t(m.list.f[[1]]) 
+
+swap.m=list() 
+
+times=1000
+
+for (k in 1:times){
+  swap.m[[k]]=network_swap(gbi, swaps=1000)$Association_index }
+
+swap.g=lapply(swap.m, function(x) graph_from_adjacency_matrix(x, "undirected", weighted=T)) 
+mod.swap=sapply(swap.g, function(x) modularity(cluster_fast_greedy(x)))
+
+hist(mod.swap, xlim = c(min(mod.swap), mod.d))
+abline(v=mod.d, col="red", lty=2, lwd=2) 
+p=(length(which(mod.swap>=mod.d[[1]]))+1)/(times+1)
+p
+
+?erdos.renyi.game
+x <- names(dat.1)
+x <- x[-16]
+
+get.edge.ids(gs.d[[1]], vp = x)
+###try serial method###
+
+gbi2 = t(m.list.d[[1]])
+gbi2 = t(m.list.e[[1]])
+gbi2 = t(m.list.f[[1]])
+assoc2=get_network(gbi2)
+
+net.perm=network_permutation(gbi2, permutations=10000, returns=1, association_matrix = assoc2)
+
+swap.g2=apply(net.perm, 1, function(x) graph_from_adjacency_matrix(x,"undirected", weighted=T))
+mod.swap2=sapply(swap.g2, function(x) modularity(cluster_fast_greedy(x))) 
+hist(mod.swap2,xlim=c(min(mod.swap2), mods[[1]]), main="Serial Method") 
+abline(v=mods[[1]], col="red", lty=2, lwd=2) 
+p=(length(which(mod.swap2>=mods[[1]]))+1)/100001
+p
+edge.attributes(gs.d[[1]], index = E(gs.d[[1]]))
+###putting variables together for results
+
+pen <-  c("D", "E", "F")
+global_p <- c("0.059", "0.0079", "0.002")
+serial_p <- c("<0.001", "<0.001", "<0.001")
+
+pen.global.serial <- cbind(pen, global_p, serial_p)
+
+pen.global.serial <- as.data.frame(pen.global.serial)
+
+
+adjs.d = lapply(m.list.d, function(x) get_network(t(x), data_format = "GBI", association_index = "SRI"))
+?get_network()
+
+id12=rownames(adjs[[1]])[rownames(adjs[[1]])%in%rownames(adjs[[2]])] #get IDs of birds that were present in both networks
+ids.m1=match(id12,rownames(adjs[[1]])) #get row/columns of those individuals in matrix 1 
+ids.m2=match(id12,rownames(adjs[[2]])) #get row/colums of those individuals in matrix 2
+m12=adjs[[1]][ids.m1,ids.m1] #matrix 1 of association indices of only returning individuals
+m21=adjs[[2]][ids.m2,ids.m2] #matrix 2 of association indices of only returning individuals
+m12=m12[order(rownames(m12)),order(rownames(m12))] #reorder the rows/columns by alphanumeric order
+m21=m21[order(rownames(m21)),order(rownames(m21))] #reorder the rows/columns by alphanumeric order
+
+mantel12=mantel(as.dist(m12)~as.dist(m21)) 
+mantel12
+
+
+###try with a different format
+library(stringr)
+dat <- read.csv2("processed data/MarinaDataFormat2.csv", header = T, sep = ";")
+summary(dat)
+names(dat)
+
+dat.1 <- dat %>% 
+ select(!contains("behaviour"))
+
+summary(dat.1)
+
+dat.1 <- dat.1 %>% 
+  mutate(pen = as.factor(ï..Pen),
+         date = dmy(Date),
+         fa = as.factor(Focal_Animal))
+
+names(dat.1) = gsub(pattern = "Association.", replacement = "", x = names(dat.1))
+names(dat.1)
+
+dat.1 <- dat.1 %>% 
+  select(-"ï..Pen", -"Date", -"Focal_Animal", -"individual.not.found")
+
+names(dat.1)
+dat.1 <- dat.1 %>% 
+  relocate(fa)
+
+dat.1.d <- dat.1 %>% 
+  filter(pen == "D")
+
+dat.1.d.try <- dat.1.d %>% 
+  group_by(fa) %>% 
+  summarise(across(BY:TU, sum))
+
+x <- dat.1.d.try$fa
+
+dat.1.d.d <- data.frame(dat.1.d.try[,-1], row.names = x)
+
+dat.1.d.d <- dat.1.d.d[order(rownames(dat.1.d.d)),order(rownames(dat.1.d.d))]
+dat.1.d.d <- dat.1.d.d[,order(colnames(dat.1.d.d))]
+d.name
+
+d.name <- d.name[! d.name %in% c('ime2')]
+
+dat.d.pre.edge <- dat.1.d.d %>% 
+  select(all_of(d.name))
+
+
+dat.d.pre.edge <- dat.d.pre.edge %>% 
+  filter(row.names(dat.d.pre.edge) %in% d.name)
+dat.d.pre.edge <- as.matrix(dat.d.pre.edge)
+g.d = graph_from_adjacency_matrix(dat.d.pre.edge, mode = "undirected", weighted = T)
+
+set.seed(123)
+plot(g.d, edge.width = E(g.d)$weight, layout=layout_with_fr(g.d))
+
+coms.d = cluster_fast_greedy(g.d)
+
+node.colors=membership(coms.d) #assign node color based on community membership
+
+set.seed(123)
+
+l=layout_with_fr(g.d)
+
+V(g.d)$color=node.colors
+
+plot(g.d, layout=l, edge.width=E(g.d)$weight, vertex.size=20,edge.color="gray10", main=paste("Pen D Pre-transition", ": Modularity=", round(modularity(coms.d), 2)))
+
+
+####Pen E
+
+dat.1.e <- dat.1 %>% 
+  filter(pen == "E")
+
+dat.1.e.try <- dat.1.e %>% 
+  group_by(fa) %>% 
+  summarise(across(BY:TU, sum))
+
+x <- dat.1.e.try$fa
+
+dat.1.e.e <- data.frame(dat.1.d.try[,-1], row.names = x)
+
+dat.1.e.e <- dat.1.e.e[order(rownames(dat.1.e.e)),order(colnames(dat.1.e.e))]
+dat.1.e.e <- dat.1.e.e[,order(colnames(dat.1.e.e))]
+e.name
+
+e.name <- e.name[! e.name %in% c('ime1')]
+e.name <- e.name %>% 
+  substring(., 2)
+
+dat.e.pre.edge <- dat.1.e.e %>% 
+  select(all_of(e.name))
+
+dat.e.pre.edge <- dat.e.pre.edge %>% 
+  filter(row.names(dat.e.pre.edge) %in% e.name)
+dat.e.pre.edge <- as.matrix(dat.e.pre.edge)
+diag(dat.e.pre.edge) <- 0
+g.e = graph_from_adjacency_matrix(dat.e.pre.edge, mode = "undirected", weighted = T)
+
+set.seed(123)
+plot(g.e, edge.width = E(g.e)$weight, layout=layout_with_fr(g.e))
+
+coms.e = cluster_fast_greedy(g.e)
+
+node.colors=membership(coms.e) #assign node color based on community membership
+
+set.seed(123)
+
+l=layout_with_fr(g.e)
+V(g.e)$color=node.colors
+plot(g.e, layout=l, edge.width=E(g.e)$weight, vertex.size=20,edge.color="gray10", main=paste("Pen E Pre-transition", ": Modularity=", round(modularity(coms.e), 2)))
+
+
+####Pen F
+
+dat.1.f <- dat.1 %>% 
+  filter(pen == "F")
+
+dat.1.f.try <- dat.1.f %>% 
+  group_by(fa) %>% 
+  summarise(across(BY:TU, sum))
+x <- dat.1.f.try$fa
+dat.1.f.f <- data.frame(dat.1.f.try[,-1], row.names = x)
+
+
+
+dat.1.f.f <- dat.1.f.f[order(rownames(dat.1.f.f)),order(colnames(dat.1.f.f))]
+f.name
+f.name <- f.name[! f.name %in% c('ime1')]
+f.name <- f.name[! f.name %in% c('imeStamp')]
+f.name <- f.name %>% 
+  substring(., 2)
+
+dat.f.pre.edge <- dat.1.f.f %>% 
+  select(all_of(f.name))
+
+dat.f.pre.edge <- dat.f.pre.edge %>% 
+  filter(row.names(dat.f.pre.edge) %in% f.name)
+dat.f.pre.edge <- as.matrix(dat.f.pre.edge)
+diag(dat.f.pre.edge) <- 0
+g.f = graph_from_adjacency_matrix(dat.f.pre.edge, mode = "undirected", weighted = T)
+
+set.seed(123)
+plot(g.f, edge.width = E(g.f)$weight, layout=layout_with_fr(g.f))
+
+coms.f = cluster_fast_greedy(g.f)
+
+node.colors=membership(coms.f) #assign node color based on community membership
+
+set.seed(123)
+
+l=layout_with_fr(g.f)
+V(g.f)$color=node.colors
+plot(g.f, layout=l, edge.width=E(g.f)$weight, vertex.size=20,edge.color="gray10", main=paste("Pen F Pre-transition", ": Modularity=", round(modularity(coms.f), 2)))
+
+
+#Pen D
+swap.m=list() 
+
+times=1000
+
+for (k in 1:times){
+  swap.m[[k]]=network_swap(dat.d.pre.edge, swaps=1000)$Association_index }
+
+swap.f=lapply(swap.m, function(x) graph_from_adjacency_matrix(x, "undirected", weighted=T)) 
+mod.swap=sapply(swap.f, function(x) modularity(cluster_fast_greedy(x)))
+
+hist(mod.swap, xlim=c(min(mod.swap), modularity(coms.d)))
+abline(v=modularity(coms.d), col="red", lty=2, lwd=2) 
+p=(length(which(mod.swap>=modularity(coms.d)))+1)/(times+1)
+p
+
+
+#Pen E
+swap.e=list() 
+
+times=1000
+
+for (k in 1:times){
+  swap.e[[k]]=network_swap(dat.e.pre.edge, swaps=1000)$Association_index }
+
+swap.e.1=lapply(swap.e, function(x) graph_from_adjacency_matrix(x, "undirected", weighted=T)) 
+mod.e.swap=sapply(swap.e.1, function(x) modularity(cluster_spinglass(x)))
+mod.e.swap=sapply(swap.e.1, function(x) modularity(cluster_fast_greedy(x)))
+
+cluster_spinglass(x)
+
+try <- map(swap.e.1, safe.mod.swap)
+try.1 <- try[! try %in% c("Error in file")]
+Pen.e.swap <- unlist(try.1, use.names=FALSE)
+
+hist(Pen.e.swap, xlim=c(min(Pen.e.swap), modularity(coms.e)))
+abline(v=modularity(coms.e), col="red", lty=2, lwd=2) 
+p=(length(which(Pen.e.swap>=modularity(coms.e)))+1)/(times+1)
+p
+
+
+#Pen F
+swap.f=list() 
+
+times=1000
+
+for (k in 1:times){
+  swap.f[[k]]=network_swap(dat.f.pre.edge, swaps=1000)$Association_index }
+
+
+swap.f.1=lapply(swap.f, function(x) graph_from_adjacency_matrix(x, "undirected", weighted=T)) 
+mod.swap <- function(x){
+  modularity(cluster_fast_greedy(x))
+}
+mod.swap=possibly(sapply(swap.f, function(x) modularity(cluster_fast_greedy(x))), otherwise = "Error in file")
+
+
+safe.mod.swap <- possibly(mod.swap, otherwise = "Error in file")
+
+try <- map(swap.f.1, safe.mod.swap)
+str(try, max.level = 1)
+try.1 <- try[! try %in% c("Error in file")]
+Pen.f.swap <- unlist(try.1, use.names=FALSE)
+hist(Pen.f.swap, xlim=c(min(Pen.f.swap), modularity(coms.f)))
+abline(v=modularity(coms.f), col="red", lty=2, lwd=2) 
+p=(length(which(Pen.f.swap>=modularity(coms.f)))+1)/(times+1)
+p
+
+
+#restrict comparison to individuals that were seen in two time periods - don't really need to do this I think as we only have the same 15###
+###good practice though###
+
+###need to get rid of the first letter of adj datasets###
+names(adjs.d)[-1] <- sub("D.", "", names(adjs.d)[-1], fixed = TRUE)
+
+rownames(adjs.d[[1]]) <- sub("D", "", rownames(adjs.d[[1]]))
+rownames(adjs.d[[2]]) <- sub("D", "", rownames(adjs.d[[2]])) 
+colnames(adjs.d[[1]]) <- sub("D", "", colnames(adjs.d[[1]]))
+colnames(adjs.d[[2]]) <- sub("D", "", colnames(adjs.d[[2]])) 
+
+colnames(adjs.d[[2]])
+id12=rownames(adjs.d[[1]])[rownames(adjs.d[[1]])%in%rownames(adjs.d[[2]])] #get IDs of birds that were present in both networks
+ids.m1=match(id12,rownames(adjs.d[[1]])) #get row/columns of those individuals in matrix 1 
+ids.m2=match(id12,rownames(adjs.d[[2]])) #get row/colums of those individuals in matrix 2
+m12=adjs.d[[1]][ids.m1,ids.m1] #matrix 1 of association indices of only returning individuals
+m21=adjs.d[[2]][ids.m2,ids.m2] #matrix 2 of association indices of only returning individuals
+m12=m12[order(rownames(m12)),order(rownames(m12))] #reorder the rows/columns by alphanumeric order
+m21=m21[order(rownames(m21)),order(rownames(m21))] #reorder the rows/columns by alphanumeric order
+
+id12=rownames(dat.d.pre.edge)[rownames(dat.d.pre.edge)%in%rownames(adjs.d[[1]])]
+ids.m1=match(id12,rownames(dat.d.pre.edge)) #get row/columns of those individuals in matrix 1 
+ids.m2=match(id12,rownames(adjs.d[[1]])) #get row/colums of those individuals in matrix 2
+m12=dat.d.pre.edge[ids.m1,ids.m1] #matrix 1 of association indices of only returning individuals
+m21=adjs.d[[1]][ids.m2,ids.m2] #matrix 2 of association indices of only returning individuals
+m12=m12[order(rownames(m12)),order(rownames(m12))] #reorder the rows/columns by alphanumeric order
+m21=m21[order(rownames(m21)),order(rownames(m21))] #reorder the rows/columns by alphanumeric order
+
+
+mantel12=mantel(as.dist(dat.d.pre.edge)~as.dist(adjs.d[[1]])) 
+mantel12
+mantel13=mantel(as.dist(dat.d.pre.edge)~as.dist(adjs.d[[2]])) 
+mantel13
+mantel23=mantel(as.dist(m12)~as.dist(m21)) 
+mantel23
