@@ -1260,13 +1260,22 @@ require(lme4)
 d.m1 <- lmer(scale(strength) ~ timepoint + (1|nodes), data = d.all)
 summary(d.m1)
 tidy(d.m1, effects = c("fixed"), conf.int = T, conf.level = 0.95)
+em.d1 <- emmeans(d.m1, ~ timepoint)
+pairs(em.d1)
 
 d.m2 <- lmer(betweenness ~ timepoint + (1|nodes), data = d.all)
 summary(d.m2)
+tidy(d.m2, effects = c("fixed"), conf.int = T, conf.level = 0.95)
+em.d2 <- emmeans(d.m2, ~ timepoint)
+pairs(em.d2)
 
 d.m3 <- lmer(e_cent ~ timepoint + (1|nodes), data = d.all)
 summary(d.m3)
 
+tidy(d.m3, effects = c("fixed"), conf.int = T, conf.level = 0.95)
+
+em.d3 <- emmeans(d.m3, ~ timepoint)
+pairs(em.d3)
 
 gs.e1 <- graph.strength(gs.e[[1]])
 gs.e2 <- graph.strength(gs.e[[2]])
@@ -1316,13 +1325,19 @@ e.all$timepoint <- as.factor(e.all$timepoint)
 
 e.m1 <- lmer(scale(strength) ~ timepoint + (1|nodes), data = e.all)
 summary(e.m1)
-
+tidy(e.m1, effects = c("fixed"), conf.int = T, conf.level = 0.95)
+em.e1 <- emmeans(e.m1, ~ timepoint)
+pairs(em.e1)
 e.m2 <- lmer(betweenness ~ timepoint + (1|nodes), data = e.all)
 summary(e.m2)
-
+tidy(e.m2, effects = c("fixed"), conf.int = T, conf.level = 0.95)
+em.e2 <- emmeans(e.m2, ~ timepoint)
+pairs(em.e2)
 e.m3 <- lmer(e_cent ~ timepoint + (1|nodes), data = e.all)
 summary(e.m3)
-
+tidy(e.m3, effects = c("fixed"), conf.int = T, conf.level = 0.95)
+em.e3 <- emmeans(e.m3, ~ timepoint)
+pairs(em.e3)
 
 gs.f1 <- graph.strength(gs.f[[1]])
 gs.f2 <- graph.strength(gs.f[[2]])
