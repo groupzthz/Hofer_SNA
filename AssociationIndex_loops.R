@@ -886,12 +886,14 @@ dat.1.d.d <- data.frame(dat.1.d.try[,-1], row.names = x)
 dat.1.d.d <- dat.1.d.d[order(rownames(dat.1.d.d)),order(rownames(dat.1.d.d))]
 dat.1.d.d <- dat.1.d.d[,order(colnames(dat.1.d.d))]
 d.name
-
+names(dat.1.d.d)
 d.name <- d.name[! d.name %in% c('ime2')]
+d.name <- d.name[! d.name %in% c('date')]
+d.name <- d.name[! d.name %in% c('pen')]
 
 dat.d.pre.edge <- dat.1.d.d %>% 
   select(all_of(d.name))
-
+dat.d.pre.edge <- dat.d.pre.edge[,order(colnames(dat.d.pre.edge))]
 
 dat.d.pre.edge <- dat.d.pre.edge %>% 
   filter(row.names(dat.d.pre.edge) %in% d.name)
@@ -931,7 +933,7 @@ dat.1.e.e <- dat.1.e.e[order(rownames(dat.1.e.e)),order(colnames(dat.1.e.e))]
 dat.1.e.e <- dat.1.e.e[,order(colnames(dat.1.e.e))]
 e.name
 
-e.name <- e.name[! e.name %in% c('ime1')]
+e.name <- e.name[! e.name %in% c('time1')]
 e.name <- e.name %>% 
   substring(., 2)
 
@@ -973,7 +975,7 @@ dat.1.f.f <- data.frame(dat.1.f.try[,-1], row.names = x)
 
 dat.1.f.f <- dat.1.f.f[order(rownames(dat.1.f.f)),order(colnames(dat.1.f.f))]
 f.name
-f.name <- f.name[! f.name %in% c('ime1')]
+f.name <- f.name[! f.name %in% c('time1')]
 f.name <- f.name[! f.name %in% c('imeStamp')]
 f.name <- f.name %>% 
   substring(., 2)
@@ -1105,3 +1107,275 @@ mantel13=mantel(as.dist(dat.d.pre.edge)~as.dist(adjs.d[[2]]))
 mantel13
 mantel23=mantel(as.dist(m12)~as.dist(m21)) 
 mantel23
+
+
+####get strength of ties for each network for each individual
+d.1 <- network(adjs.d[[1]],
+               directed = F,
+               ignore.eval = F, 
+               names.eval = "weight")
+
+d.2 <- network(adjs.d[[2]],
+               directed = F,
+               ignore.eval = F, 
+               names.eval = "weight")
+
+gplot(d.1, gmode="graph", 
+      edge.col="darkgrey", 
+      edge.lwd=d.1 %e% "weight")
+
+gplot(d.2, gmode="graph", 
+      edge.col="darkgrey", 
+      edge.lwd=d.1 %e% "weight")
+connectedness(d.1)
+connectedness(d.2)
+
+d1.deg<-sna::degree(d.1,  cmode="outdegree",ignore.eval=T)
+d2.deg<-sna::degree(d.2,  cmode="outdegree",ignore.eval=T)
+
+d1.wdeg<-sna::degree(d.1,  cmode="outdegree",ignore.eval=F)
+d2.wdeg<-sna::degree(d.2,  cmode="outdegree",ignore.eval=F)
+
+plot(d1.wdeg, d2.wdeg, pch = 16,
+     xlab = "Weighted degree in time period 1",
+     ylab = "Weighted degree in time period 2")
+
+cor.test(d1.wdeg, d2.wdeg, method = "spearman")
+
+
+e.1 <- network(adjs.e[[1]],
+               directed = F,
+               ignore.eval = F, 
+               names.eval = "weight")
+
+e.2 <- network(adjs.e[[2]],
+               directed = F,
+               ignore.eval = F, 
+               names.eval = "weight")
+
+connectedness(e.1)
+connectedness(e.2)
+
+e1.wdeg<-sna::degree(e.1,  cmode="outdegree",ignore.eval=F)
+e2.wdeg<-sna::degree(e.2,  cmode="outdegree",ignore.eval=F)
+
+plot(jitter(e1.wdeg), jitter(e2.wdeg), pch = 16,
+     xlab = "Weighted degree in time period 1",
+     ylab = "Weighted degree in time period 2")
+
+cor.test(e1.wdeg, e2.wdeg, method = "spearman")
+
+f.1 <- network(adjs.f[[1]],
+               directed = F,
+               ignore.eval = F, 
+               names.eval = "weight")
+
+f.2 <- network(adjs.f[[2]],
+               directed = F,
+               ignore.eval = F, 
+               names.eval = "weight")
+
+connectedness(f.1)
+connectedness(f.2)
+
+f1.wdeg<-sna::degree(f.1,  cmode="outdegree",ignore.eval=F)
+f2.wdeg<-sna::degree(f.2,  cmode="outdegree",ignore.eval=F)
+
+plot(jitter(f1.wdeg), jitter(f2.wdeg), pch = 16,
+     xlab = "Weighted degree in time period 1",
+     ylab = "Weighted degree in time period 2")
+
+cor.test(f1.wdeg, f2.wdeg, method = "spearman")
+
+
+connectedness(dat.d.pre.edge)
+
+d.pre <- network(dat.d.pre.edge,
+               directed = F,
+               ignore.eval = F, 
+               names.eval = "weight")
+
+dpre.wdeg<-sna::degree(d.pre,  cmode="outdegree",ignore.eval=F)
+
+plot(jitter(dpre.wdeg), jitter(d1.wdeg), pch = 16,
+     xlab = "Weighted degree pretransition",
+     ylab = "Weighted degree in time period 1")
+
+
+cor.test(dpre.wdeg, d1.wdeg, method = "spearman")
+
+
+degree=igraph::degree
+betweenness=igraph::betweenness
+closeness=igraph::closeness
+compon
+
+degree(gs.d[[2]])
+gs.d1 <- graph.strength(gs.d[[1]])
+gs.d2 <- graph.strength(gs.d[[2]])
+gs.pre <- graph.strength(g.d)
+
+cor.test(gs.d1, gs.d2, method = "spearman")
+cor.test(gs.pre, gs.d1, method = "spearman")
+
+edge_density(gs.d[[1]])
+hist(strength(gs.d[[1]]))
+hist(strength(gs.d[[2]]))
+hist(strength(g.d))
+
+hist(degree(gs.d[[1]]))
+hist(degree(gs.d[[2]]))
+hist(degree(g.d))
+bd.1 = betweenness(gs.d[[1]], normalized=T)
+bd.2 = betweenness(gs.d[[2]], normalized=T)
+bd.pre = betweenness(g.d, normalized = T)
+
+cd.1 = closeness(gs.d[[1]], normalized = T)
+cd.2 = closeness(gs.d[[2]], normalized = T)
+cd.pre = closeness(g.d, normalized = T)
+
+ecd.1 = eigen_centrality(gs.d[[1]])$vector
+ecd.2 = eigen_centrality(gs.d[[2]])$vector
+ecd.pre = eigen_centrality(g.d)$vector
+
+names = V(gs.d[[2]])$name
+names.pre = V(g.d)$name
+
+d.time1 = data.frame(nodes = as.factor(names), strength = gs.d1, betweenness = bd.1, closeness = cd.1, e_cent = ecd.1, timepoint = 2)
+summary(d)
+d.time1$nodes <- d.time1$nodes %>% 
+  substring(.,2)
+
+d.timepre =  data.frame(nodes = as.factor(names.pre), strength = gs.pre, betweenness = bd.pre, closeness = cd.pre, e_cent = ecd.pre, timepoint = 1)
+
+d.time2 = data.frame(nodes = as.factor(names), strength = gs.d2, betweenness = bd.2, closeness = cd.2, e_cent = ecd.2, timepoint = 3)
+summary(d)
+d.time2$nodes <- d.time2$nodes %>% 
+  substring(.,2)
+
+d.all <- rbind(d.timepre, d.time1, d.time2)
+summary(d.all)
+d.all$timepoint <- as.factor(d.all$timepoint)
+require(lme4)
+d.m1 <- lmer(scale(strength) ~ timepoint + (1|nodes), data = d.all)
+summary(d.m1)
+tidy(d.m1, effects = c("fixed"), conf.int = T, conf.level = 0.95)
+
+d.m2 <- lmer(betweenness ~ timepoint + (1|nodes), data = d.all)
+summary(d.m2)
+
+d.m3 <- lmer(e_cent ~ timepoint + (1|nodes), data = d.all)
+summary(d.m3)
+
+
+gs.e1 <- graph.strength(gs.e[[1]])
+gs.e2 <- graph.strength(gs.e[[2]])
+gs.epre <- graph.strength(g.e)
+
+cor.test(gs.d1, gs.d2, method = "spearman")
+cor.test(gs.pre, gs.d1, method = "spearman")
+
+edge_density(gs.d[[1]])
+hist(strength(gs.d[[1]]))
+hist(strength(gs.d[[2]]))
+hist(strength(g.d))
+
+hist(degree(gs.d[[1]]))
+hist(degree(gs.d[[2]]))
+hist(degree(g.d))
+be.1 = betweenness(gs.e[[1]], normalized=T)
+be.2 = betweenness(gs.e[[2]], normalized=T)
+be.pre = betweenness(g.e, normalized = T)
+
+ce.1 = closeness(gs.e[[1]], normalized = T)
+ce.2 = closeness(gs.e[[2]], normalized = T)
+ce.pre = closeness(g.e, normalized = T)
+
+ece.1 = eigen_centrality(gs.e[[1]])$vector
+ece.2 = eigen_centrality(gs.e[[2]])$vector
+ece.pre = eigen_centrality(g.e)$vector
+
+names = V(gs.e[[2]])$name
+names.pre = V(g.e)$name
+
+e.time1 = data.frame(nodes = as.factor(names), strength = gs.e1, betweenness = be.1, closeness = ce.1, e_cent = ece.1, timepoint = 2)
+summary(e.time1)
+e.time1$nodes <- e.time1$nodes %>% 
+  substring(.,2)
+
+e.timepre =  data.frame(nodes = as.factor(names.pre), strength = gs.epre, betweenness = be.pre, closeness = ce.pre, e_cent = ece.pre, timepoint = 1)
+
+e.time2 = data.frame(nodes = as.factor(names), strength = gs.e2, betweenness = be.2, closeness = ce.2, e_cent = ece.2, timepoint = 3)
+summary(d)
+e.time2$nodes <- e.time2$nodes %>% 
+  substring(.,2)
+
+e.all <- rbind(e.timepre, e.time1, e.time2)
+summary(e.all)
+e.all$timepoint <- as.factor(e.all$timepoint)
+
+e.m1 <- lmer(scale(strength) ~ timepoint + (1|nodes), data = e.all)
+summary(e.m1)
+
+e.m2 <- lmer(betweenness ~ timepoint + (1|nodes), data = e.all)
+summary(e.m2)
+
+e.m3 <- lmer(e_cent ~ timepoint + (1|nodes), data = e.all)
+summary(e.m3)
+
+
+gs.f1 <- graph.strength(gs.f[[1]])
+gs.f2 <- graph.strength(gs.f[[2]])
+gs.fpre <- graph.strength(g.f)
+
+bf.1 = betweenness(gs.f[[1]], normalized=T)
+bf.2 = betweenness(gs.f[[2]], normalized=T)
+bf.pre = betweenness(g.f, normalized = T)
+
+cf.1 = closeness(gs.f[[1]], normalized = T)
+cf.2 = closeness(gs.f[[2]], normalized = T)
+cf.pre = closeness(g.f, normalized = T)
+
+ecf.1 = eigen_centrality(gs.f[[1]])$vector
+ecf.2 = eigen_centrality(gs.f[[2]])$vector
+ecf.pre = eigen_centrality(g.f)$vector
+
+names = V(gs.f[[2]])$name
+names.pre = V(g.f)$name
+
+summary
+
+f.time1 = data.frame(nodes = as.factor(names), strength = gs.f1, betweenness = bf.1, closeness = cf.1, e_cent = ecf.1, timepoint = 2)
+summary(f.time1)
+f.time1$nodes <- f.time1$nodes %>% 
+  substring(.,2)
+
+f.timepre =  data.frame(nodes = as.factor(names.pre), strength = gs.fpre, betweenness = bf.pre, closeness = cf.pre, e_cent = ecf.pre, timepoint = 1)
+
+f.time2 = data.frame(nodes = as.factor(names), strength = gs.f2, betweenness = bf.2, closeness = cf.2, e_cent = ecf.2, timepoint = 3)
+summary(d)
+f.time2$nodes <- f.time2$nodes %>% 
+  substring(.,2)
+
+f.all <- rbind(f.timepre, f.time1, f.time2)
+summary(e.all)
+f.all$timepoint <- as.factor(f.all$timepoint)
+
+f.m1 <- lmer(scale(strength) ~ timepoint + (1|nodes), data = f.all)
+summary(f.m1)
+fit <- as(f.m1, "merModLmerTest")
+tidy(f.m1, effects = c("fixed"), conf.int = T, conf.level = 0.95)
+em.f1 <- emmeans(f.m1, ~ timepoint)
+pairs(em.f1)
+f.m2 <- lmer(betweenness ~ timepoint + (1|nodes), data = f.all)
+summary(f.m2)
+
+f.m3 <- lmer(e_cent ~ timepoint + (1|nodes), data = f.all)
+summary(f.m3)
+
+install.packages("pbkrtest")
+require(pbkrtest)
+require(lmerTest)
+require(emmeans)
+require(tidyverse)
+require(broom.mixed)
