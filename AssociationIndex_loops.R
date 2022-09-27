@@ -95,6 +95,11 @@ dat.1 <- dat.1[,-1]
 dat.2 <- dat.2[,-1]
 
 names(dat.1)
+names(dat.2)
+
+colnames(dat.1)[2:16] <- substring(colnames(dat.1)[2:16],2)
+colnames(dat.2)[2:16] <- substring(colnames(dat.2)[2:16],2)
+
 #d.name will be used below when we need to get rid of extra individuals from pre-transition (we only want the 15 birds post-transition)
 d.name <- names(dat.1[, -1])
 
@@ -104,7 +109,11 @@ dat.e.2 <- read.csv("processed data/rawPenE.2.csv")
 dat.e.1 <- dat.e.1[, -1]
 dat.e.2 <- dat.e.2[, -1]
 names(dat.e.1)
+names(dat.e.2)
 e.name <- names(dat.e.1[, -1])
+
+colnames(dat.e.1)[2:16] <- substring(colnames(dat.e.1)[2:16],2)
+colnames(dat.e.2)[2:16] <- substring(colnames(dat.e.2)[2:16],2)
 
 dat.f.1 <- read.csv("processed data/rawPenF.1.csv")
 dat.f.2 <- read.csv("processed data/rawPenF.2.csv")
@@ -115,6 +124,9 @@ dat.f.2 <- dat.f.2[, -1]
 names(dat.f.1)
 f.name <- names(dat.f.1[, -1])
 
+colnames(dat.f.1)[2:16] <- substring(colnames(dat.f.1)[2:16],2)
+colnames(dat.f.2)[2:16] <- substring(colnames(dat.f.2)[2:16],2)
+f
 ####lumping multiple time periods within a pen and doing functions to make faster#####
 d.dat.d <- list(dat.1, dat.2)
 d.dat.e <- list(dat.e.1, dat.e.2)
@@ -224,9 +236,9 @@ mods.f = sapply(coms.f, modularity)
 ###also do we want the vertex label (HenID) in graph? would need to change cex maybe###
 
 com.colors = list(c("blue", "yellow", "green", "red"), c( "green",  "blue", "red", "yellow"))
-
+com.colors = list(c("yellow", "green", "red"), c("yellow", "green", "red"))
 ###save files to plots folder
-png(filename = paste(plots_path_out, 'penD.modularity.png'), width = 1024, height = 768, pointsize = 12)
+png(filename = paste(plots_path_out, 'penD.modularity.new.png'), width = 1024, height = 768, pointsize = 12)
 
 #set seed for reproducability
 set.seed(2)
@@ -242,7 +254,7 @@ for(i in 1:2){
 
 dev.off()
 
-png(filename = paste(plots_path_out, 'penE.modularity.png'), width = 1024, height = 768, pointsize = 12)
+png(filename = paste(plots_path_out, 'penE.modularity.new.png'), width = 1024, height = 768, pointsize = 12)
 
 set.seed(2)
 par(mfrow = c(1,2))
@@ -251,20 +263,20 @@ par(mfrow = c(1,2))
 for(i in 1:2){
   l = layout_with_fr(gs.e[[i]])
   V(gs.e[[i]])$color = com.colors[[i]][membership(coms.e[[i]])]
-  plot(gs.e[[i]], layout = l, edge.width = E(gs.e[[i]])$weight*200,  vertex.label = "", vertex.size = 10, edge.color = "gray10")
+  plot(gs.e[[i]], layout = l, edge.width = E(gs.e[[i]])$weight*200, vertex.size = 15, edge.color = "gray10")
   title(paste(time.period[i], ":Modularity =", round(mods.e[[i]], 2)),  cex.main = 2.25)
 }
 
 dev.off()
 
-png(filename = paste(plots_path_out, 'penF.modularity.png'), width = 1024, height = 768, pointsize = 12)
+png(filename = paste(plots_path_out, 'penF.modularity.new.png'), width = 1024, height = 768, pointsize = 12)
 
 set.seed(2)
 par(mfrow = c(1,2))
 for(i in 1:2){
   l = layout_with_fr(gs.f[[i]])
   V(gs.f[[i]])$color = com.colors[[i]][membership(coms.f[[i]])]
-  plot(gs.f[[i]], layout = l, edge.width = E(gs.f[[i]])$weight*200,  vertex.label = "", vertex.size = 10, edge.color = "gray10")
+  plot(gs.f[[i]], layout = l, edge.width = E(gs.f[[i]])$weight*200, vertex.size = 15, edge.color = "gray10")
   title(paste(time.period[i], ":Modularity =", round(mods.f[[i]], 2)),  cex.main = 2.25)
 }
 
@@ -888,18 +900,16 @@ dat.1.d.d <- data.frame(dat.1.d.try[,-1], row.names = x)
 dat.1.d.d <- dat.1.d.d[order(rownames(dat.1.d.d)),order(rownames(dat.1.d.d))]
 dat.1.d.d <- dat.1.d.d[,order(colnames(dat.1.d.d))]
 d.name
-<<<<<<< HEAD
 
 d.name <- d.name[! d.name %in% c('time2')]
 
 d.name <- d.name %>% 
   substring(., 2)
-=======
+
 names(dat.1.d.d)
 d.name <- d.name[! d.name %in% c('ime2')]
 d.name <- d.name[! d.name %in% c('date')]
 d.name <- d.name[! d.name %in% c('pen')]
->>>>>>> f5660d92632184d964797f01426aad1392dffbfc
 
 dat.d.pre.edge <- dat.1.d.d %>% 
   select(all_of(d.name))
@@ -1477,14 +1487,18 @@ em.f1 <- emmeans(f.m1, ~ timepoint)
 pairs(em.f1)
 f.m2 <- lmer(betweenness ~ timepoint + (1|nodes), data = f.all)
 summary(f.m2)
-
+tidy(f.m2, effects = c("fixed"), conf.int = T, conf.level = 0.95)
+em.f2 <- emmeans(f.m2, ~ timepoint)
+pairs(em.f2)
 f.m3 <- lmer(e_cent ~ timepoint + (1|nodes), data = f.all)
 summary(f.m3)
-
+tidy(f.m3, effects = c("fixed"), conf.int = T, conf.level = 0.95)
+em.f3 <- emmeans(f.m3, ~ timepoint)
+pairs(em.f3)
 install.packages("pbkrtest")
 require(pbkrtest)
 require(lmerTest)
 require(emmeans)
 require(tidyverse)
 require(broom.mixed)
->>>>>>> f5660d92632184d964797f01426aad1392dffbfc
+
