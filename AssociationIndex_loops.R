@@ -8,8 +8,9 @@ library("tidyverse")
 library("asnipe")
 library("igraph")
 library("sna")
-library("ANTs")
 
+
+sessionInfo()
 
 ###checking which files I have
 list.files()
@@ -28,6 +29,7 @@ dat <-
 
 dat <- dat %>% 
   mutate(time2 = as_date(TimeStamp))
+
 
 #dividing into time points
 
@@ -234,7 +236,7 @@ par(mfrow = c(1,2))
 for(i in 1:2){
   l = layout_with_fr(gs.d[[i]])
   V(gs.d[[i]])$color = com.colors[[i]][membership(coms.d[[i]])]
-  plot(gs.d[[i]], layout = l, edge.width = E(gs.d[[i]])$weight*200,  vertex.label = "", vertex.size = 10, edge.color = "gray10")
+  plot(gs.d[[i]], layout = l, edge.width = E(gs.d[[i]])$weight*200, vertex.size = 15, edge.color = "gray10")
   title(paste(time.period[i], ":Modularity =", round(mods.d[[i]], 2)),  cex.main = 2.25)
 }
 
@@ -887,7 +889,10 @@ dat.1.d.d <- dat.1.d.d[order(rownames(dat.1.d.d)),order(rownames(dat.1.d.d))]
 dat.1.d.d <- dat.1.d.d[,order(colnames(dat.1.d.d))]
 d.name
 
-d.name <- d.name[! d.name %in% c('ime2')]
+d.name <- d.name[! d.name %in% c('time2')]
+
+d.name <- d.name %>% 
+  substring(., 2)
 
 dat.d.pre.edge <- dat.1.d.d %>% 
   select(all_of(d.name))
@@ -896,6 +901,7 @@ dat.d.pre.edge <- dat.1.d.d %>%
 dat.d.pre.edge <- dat.d.pre.edge %>% 
   filter(row.names(dat.d.pre.edge) %in% d.name)
 dat.d.pre.edge <- as.matrix(dat.d.pre.edge)
+
 g.d = graph_from_adjacency_matrix(dat.d.pre.edge, mode = "undirected", weighted = T)
 
 set.seed(123)
@@ -906,6 +912,7 @@ coms.d = cluster_fast_greedy(g.d)
 node.colors=membership(coms.d) #assign node color based on community membership
 
 set.seed(123)
+par(mfrow = c(1,1))
 
 l=layout_with_fr(g.d)
 
@@ -931,7 +938,7 @@ dat.1.e.e <- dat.1.e.e[order(rownames(dat.1.e.e)),order(colnames(dat.1.e.e))]
 dat.1.e.e <- dat.1.e.e[,order(colnames(dat.1.e.e))]
 e.name
 
-e.name <- e.name[! e.name %in% c('ime1')]
+e.name <- e.name[! e.name %in% c('time1')]
 e.name <- e.name %>% 
   substring(., 2)
 
@@ -942,6 +949,7 @@ dat.e.pre.edge <- dat.e.pre.edge %>%
   filter(row.names(dat.e.pre.edge) %in% e.name)
 dat.e.pre.edge <- as.matrix(dat.e.pre.edge)
 diag(dat.e.pre.edge) <- 0
+
 g.e = graph_from_adjacency_matrix(dat.e.pre.edge, mode = "undirected", weighted = T)
 
 set.seed(123)
@@ -973,7 +981,7 @@ dat.1.f.f <- data.frame(dat.1.f.try[,-1], row.names = x)
 
 dat.1.f.f <- dat.1.f.f[order(rownames(dat.1.f.f)),order(colnames(dat.1.f.f))]
 f.name
-f.name <- f.name[! f.name %in% c('ime1')]
+f.name <- f.name[! f.name %in% c('time1')]
 f.name <- f.name[! f.name %in% c('imeStamp')]
 f.name <- f.name %>% 
   substring(., 2)
@@ -1081,7 +1089,8 @@ rownames(adjs.d[[2]]) <- sub("D", "", rownames(adjs.d[[2]]))
 colnames(adjs.d[[1]]) <- sub("D", "", colnames(adjs.d[[1]]))
 colnames(adjs.d[[2]]) <- sub("D", "", colnames(adjs.d[[2]])) 
 
-colnames(adjs.d[[2]])
+colnames(adjs.d[[1]])
+colnames(m13)
 id12=rownames(adjs.d[[1]])[rownames(adjs.d[[1]])%in%rownames(adjs.d[[2]])] #get IDs of birds that were present in both networks
 ids.m1=match(id12,rownames(adjs.d[[1]])) #get row/columns of those individuals in matrix 1 
 ids.m2=match(id12,rownames(adjs.d[[2]])) #get row/colums of those individuals in matrix 2
@@ -1090,18 +1099,97 @@ m21=adjs.d[[2]][ids.m2,ids.m2] #matrix 2 of association indices of only returnin
 m12=m12[order(rownames(m12)),order(rownames(m12))] #reorder the rows/columns by alphanumeric order
 m21=m21[order(rownames(m21)),order(rownames(m21))] #reorder the rows/columns by alphanumeric order
 
-id12=rownames(dat.d.pre.edge)[rownames(dat.d.pre.edge)%in%rownames(adjs.d[[1]])]
-ids.m1=match(id12,rownames(dat.d.pre.edge)) #get row/columns of those individuals in matrix 1 
-ids.m2=match(id12,rownames(adjs.d[[1]])) #get row/colums of those individuals in matrix 2
-m12=dat.d.pre.edge[ids.m1,ids.m1] #matrix 1 of association indices of only returning individuals
-m21=adjs.d[[1]][ids.m2,ids.m2] #matrix 2 of association indices of only returning individuals
-m12=m12[order(rownames(m12)),order(rownames(m12))] #reorder the rows/columns by alphanumeric order
-m21=m21[order(rownames(m21)),order(rownames(m21))] #reorder the rows/columns by alphanumeric order
+id13=rownames(dat.d.pre.edge)[rownames(dat.d.pre.edge)%in%rownames(adjs.d[[1]])]
+ids.m3=match(id13,rownames(dat.d.pre.edge)) #get row/columns of those individuals in matrix 1 
+ids.m4=match(id13,rownames(adjs.d[[1]])) #get row/colums of those individuals in matrix 2
+m13=dat.d.pre.edge[ids.m3,ids.m3] #matrix 1 of association indices of only returning individuals
+m31=adjs.d[[1]][ids.m4,ids.m4] #matrix 2 of association indices of only returning individuals
+m13=m13[order(rownames(m13)),order(rownames(m13))] #reorder the rows/columns by alphanumeric order
+m31=m31[order(rownames(m31)),order(rownames(m31))] #reorder the rows/columns by alphanumeric order
 
-
-mantel12=mantel(as.dist(dat.d.pre.edge)~as.dist(adjs.d[[1]])) 
+library(ecodist)
+mantel12=mantel(as.dist(m12)~as.dist(m21)) 
 mantel12
-mantel13=mantel(as.dist(dat.d.pre.edge)~as.dist(adjs.d[[2]])) 
+mantel13=mantel(as.dist(m13)~as.dist(m31)) 
 mantel13
-mantel23=mantel(as.dist(m12)~as.dist(m21)) 
+mantel23=mantel(as.dist(m21)~as.dist(m13)) 
 mantel23
+
+
+
+###need to get rid of the first letter of adj datasets###
+names(adjs.e)[-1] <- sub("E.", "", names(adjs.d)[-1], fixed = TRUE)
+
+rownames(adjs.e[[1]]) <- sub("E", "", rownames(adjs.e[[1]]))
+rownames(adjs.e[[2]]) <- sub("E", "", rownames(adjs.e[[2]])) 
+colnames(adjs.e[[1]]) <- sub("E", "", colnames(adjs.e[[1]]))
+colnames(adjs.e[[2]]) <- sub("E", "", colnames(adjs.e[[2]])) 
+
+colnames(adjs.e[[1]])
+colnames(m23)
+id.e.12=rownames(adjs.e[[1]])[rownames(adjs.e[[1]])%in%rownames(adjs.e[[2]])] #get IDs of birds that were present in both networks
+ids.e.m1=match(id.e.12,rownames(adjs.e[[1]])) #get row/columns of those individuals in matrix 1 
+ids.e.m2=match(id.e.12,rownames(adjs.e[[2]])) #get row/colums of those individuals in matrix 2
+m.e.12=adjs.e[[1]][ids.e.m1,ids.e.m1] #matrix 1 of association indices of only returning individuals
+m.e.21=adjs.e[[2]][ids.e.m2,ids.e.m2] #matrix 2 of association indices of only returning individuals
+m.e.12=m.e.12[order(rownames(m.e.12)),order(rownames(m.e.12))] #reorder the rows/columns by alphanumeric order
+m.e.21=m.e.21[order(rownames(m.e.21)),order(rownames(m.e.21))] #reorder the rows/columns by alphanumeric order
+
+id.e.13=rownames(dat.e.pre.edge)[rownames(dat.e.pre.edge)%in%rownames(adjs.e[[1]])]
+ids.e.m3=match(id.e.13,rownames(dat.e.pre.edge)) #get row/columns of those individuals in matrix 1 
+ids.e.m4=match(id.e.13,rownames(adjs.e[[1]])) #get row/colums of those individuals in matrix 2
+m.e.13=dat.e.pre.edge[ids.e.m3,ids.e.m3] #matrix 1 of association indices of only returning individuals
+m.e.31=adjs.e[[1]][ids.e.m4,ids.e.m4] #matrix 2 of association indices of only returning individuals
+m.e.13=m.e.13[order(rownames(m.e.13)),order(rownames(m.e.13))] #reorder the rows/columns by alphanumeric order
+m.e.31=m.e.31[order(rownames(m.e.31)),order(rownames(m.e.31))] #reorder the rows/columns by alphanumeric order
+
+library(ecodist)
+rownames(m.e.12)
+rownames(m.e.13)
+rownames(m.e.21)
+mantel.e.12=mantel(as.dist(m.e.12)~as.dist(m.e.21)) 
+mantel.e.12
+mantel.e.13=mantel(as.dist(m.e.12)~as.dist(m.e.13)) 
+mantel.e.13
+mantel.e.23=mantel(as.dist(m.e.21)~as.dist(m.e.13)) 
+mantel.e.23
+
+
+
+###need to get rid of the first letter of adj datasets###
+names(adjs.e)[-1] <- sub("E.", "", names(adjs.d)[-1], fixed = TRUE)
+
+rownames(adjs.f[[1]]) <- sub("F", "", rownames(adjs.f[[1]]))
+rownames(adjs.f[[2]]) <- sub("F", "", rownames(adjs.f[[2]])) 
+colnames(adjs.f[[1]]) <- sub("F", "", colnames(adjs.f[[1]]))
+colnames(adjs.f[[2]]) <- sub("F", "", colnames(adjs.f[[2]])) 
+
+colnames(adjs.f[[2]])
+
+id.f.12=rownames(adjs.f[[1]])[rownames(adjs.f[[1]])%in%rownames(adjs.f[[2]])] #get IDs of birds that were present in both networks
+ids.f.m1=match(id.f.12,rownames(adjs.f[[1]])) #get row/columns of those individuals in matrix 1 
+ids.f.m2=match(id.f.12,rownames(adjs.f[[2]])) #get row/colums of those individuals in matrix 2
+m.f.12=adjs.f[[1]][ids.f.m1,ids.f.m1] #matrix 1 of association indices of only returning individuals
+m.f.21=adjs.f[[2]][ids.f.m2,ids.f.m2] #matrix 2 of association indices of only returning individuals
+m.f.12=m.f.12[order(rownames(m.f.12)),order(rownames(m.f.12))] #reorder the rows/columns by alphanumeric order
+m.f.21=m.f.21[order(rownames(m.f.21)),order(rownames(m.f.21))] #reorder the rows/columns by alphanumeric order
+
+id.f.13=rownames(dat.f.pre.edge)[rownames(dat.f.pre.edge)%in%rownames(adjs.f[[1]])]
+ids.f.m3=match(id.f.13,rownames(dat.f.pre.edge)) #get row/columns of those individuals in matrix 1 
+ids.f.m4=match(id.f.13,rownames(adjs.f[[1]])) #get row/colums of those individuals in matrix 2
+m.f.13=dat.f.pre.edge[ids.f.m3,ids.f.m3] #matrix 1 of association indices of only returning individuals
+m.f.31=adjs.f[[1]][ids.f.m4,ids.f.m4] #matrix 2 of association indices of only returning individuals
+m.f.13=m.f.13[order(rownames(m.f.13)),order(rownames(m.f.13))] #reorder the rows/columns by alphanumeric order
+m.f.31=m.f.31[order(rownames(m.f.31)),order(rownames(m.f.31))] #reorder the rows/columns by alphanumeric order
+
+library(ecodist)
+rownames(m.f.12)
+rownames(m.f.13)
+rownames(m.f.21)
+rownames(m.f.31)
+mantel.f.12=mantel(as.dist(m.f.12)~as.dist(m.f.21)) 
+mantel.f.12
+mantel.f.13=mantel(as.dist(m.f.12)~as.dist(m.f.13)) 
+mantel.f.13
+mantel.f.23=mantel(as.dist(m.f.21)~as.dist(m.f.13)) 
+mantel.f.23
