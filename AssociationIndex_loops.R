@@ -1394,3 +1394,155 @@ require(lmerTest)
 require(emmeans)
 require(tidyverse)
 require(broom.mixed)
+
+t.1 <- sna::degree(adjs.d[[1]], cmode = "outdegree")
+mean(t.1)
+graph.density(gs.d[[1]])
+mean(ran_wdeg)
+r_r = numeric()
+mat_r <- sna::rmperm(adjs.d[[1]])
+for (i in 1:1000) {
+  r_r[i] <- sna::degree(ran_net,  cmode="outdegree",ignore.eval=F)
+  mat_r = sna::rmperm(mat_r)
+  }#randomise network
+  ran_wdeg = sna::degree(ran_net,  cmode="outdegree",ignore.eval=F) #calculate degree
+  r_r[i] = mean(ran_wdeg) 
+}
+
+
+obs <- sd(rowSums(adjs.d[[1]])/mean(rowSums(adjs.d[[1]])))
+
+reference <- numeric()
+
+for(i in 1:1000) {
+  net_r <- igraph::erdos.renyi.game(n = nrow(adjs.d[[1]]), p.or.m = sum(sign(adjs.d[[1]]))/2, type = "gnm")
+  net_r <- set_edge_attr(net_r, "weight", value = rnorm(n = sum(sign(adjs.d[[1]]))/2, mean = mean(adjs.d[[1]]), sd = sd(adjs.d[[1]])))
+  mat_r <- as_adjacency_matrix(net_r, type = "both", attr = "weight", sparse = FALSE)
+  diag(mat_r) <- 0
+  reference[i] <- sd(rowSums(mat_r))/mean(rowSums(adjs.d[[1]]))
+}
+
+ref2 <- c(obs, reference)
+
+sum(obs<ref2)/length(ref2)
+
+par(xpd = FALSE)
+hist(reference, las = 1, xlim = c(0, 1), col = "grey", border = NA, main = "Reference distribution", xlab = "Test statistic values")
+lines(x = c(obs, obs), y = c(0, 500), col = "red", lwd = 4)
+lines(x = rep(quantile(ref2, 0.025), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+lines(x = rep(quantile(ref2, 0.975), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+
+
+obs <- sd(rowSums(adjs.d[[2]])/mean(rowSums(adjs.d[[2]])))
+
+reference <- numeric()
+
+for(i in 1:1000) {
+  net_r <- igraph::erdos.renyi.game(n = nrow(adjs.d[[2]]), p.or.m = sum(sign(adjs.d[[2]]))/2, type = "gnm")
+  net_r <- set_edge_attr(net_r, "weight", value = rnorm(n = sum(sign(adjs.d[[2]]))/2, mean = mean(adjs.d[[2]]), sd = sd(adjs.d[[2]])))
+  mat_r <- as_adjacency_matrix(net_r, type = "both", attr = "weight", sparse = FALSE)
+  diag(mat_r) <- 0
+  reference[i] <- sd(rowSums(mat_r))/mean(rowSums(adjs.d[[2]]))
+}
+
+ref2 <- c(obs, reference)
+
+sum(obs<ref2)/length(ref2)
+
+par(xpd = FALSE)
+hist(reference, las = 1, xlim = c(0, 1), col = "grey", border = NA, main = "Reference distribution", xlab = "Test statistic values")
+lines(x = c(obs, obs), y = c(0, 500), col = "red", lwd = 4)
+lines(x = rep(quantile(ref2, 0.025), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+lines(x = rep(quantile(ref2, 0.975), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+
+
+obs <- sd(rowSums(adjs.e[[1]])/mean(rowSums(adjs.e[[1]])))
+
+reference <- numeric()
+
+for(i in 1:1000) {
+  net_r <- igraph::erdos.renyi.game(n = nrow(adjs.e[[1]]), p.or.m = sum(sign(adjs.e[[1]]))/2, type = "gnm")
+  net_r <- set_edge_attr(net_r, "weight", value = rnorm(n = sum(sign(adjs.e[[1]]))/2, mean = mean(adjs.e[[1]]), sd = sd(adjs.e[[1]])))
+  mat_r <- as_adjacency_matrix(net_r, type = "both", attr = "weight", sparse = FALSE)
+  diag(mat_r) <- 0
+  reference[i] <- sd(rowSums(mat_r))/mean(rowSums(adjs.e[[1]]))
+}
+
+ref2 <- c(obs, reference)
+
+sum(obs<ref2)/length(ref2)
+
+par(xpd = FALSE)
+hist(reference, las = 1, xlim = c(0, 1), col = "grey", border = NA, main = "Reference distribution", xlab = "Test statistic values")
+lines(x = c(obs, obs), y = c(0, 500), col = "red", lwd = 4)
+lines(x = rep(quantile(ref2, 0.025), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+lines(x = rep(quantile(ref2, 0.975), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+
+
+obs <- sd(rowSums(adjs.e[[2]])/mean(rowSums(adjs.e[[2]])))
+
+reference <- numeric()
+
+for(i in 1:1000) {
+  net_r <- igraph::erdos.renyi.game(n = nrow(adjs.e[[2]]), p.or.m = sum(sign(adjs.e[[2]]))/2, type = "gnm")
+  net_r <- set_edge_attr(net_r, "weight", value = rnorm(n = sum(sign(adjs.e[[2]]))/2, mean = mean(adjs.e[[2]]), sd = sd(adjs.e[[2]])))
+  mat_r <- as_adjacency_matrix(net_r, type = "both", attr = "weight", sparse = FALSE)
+  diag(mat_r) <- 0
+  reference[i] <- sd(rowSums(mat_r))/mean(rowSums(adjs.e[[2]]))
+}
+
+ref2 <- c(obs, reference)
+
+sum(obs<ref2)/length(ref2)
+
+par(xpd = FALSE)
+hist(reference, las = 1, xlim = c(0, 1), col = "grey", border = NA, main = "Reference distribution", xlab = "Test statistic values")
+lines(x = c(obs, obs), y = c(0, 500), col = "red", lwd = 4)
+lines(x = rep(quantile(ref2, 0.025), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+lines(x = rep(quantile(ref2, 0.975), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+
+
+obs <- sd(rowSums(adjs.f[[1]])/mean(rowSums(adjs.f[[1]])))
+
+reference <- numeric()
+
+for(i in 1:1000) {
+  net_r <- igraph::erdos.renyi.game(n = nrow(adjs.f[[1]]), p.or.m = sum(sign(adjs.f[[1]]))/2, type = "gnm")
+  net_r <- set_edge_attr(net_r, "weight", value = rnorm(n = sum(sign(adjs.f[[1]]))/2, mean = mean(adjs.f[[1]]), sd = sd(adjs.f[[1]])))
+  mat_r <- as_adjacency_matrix(net_r, type = "both", attr = "weight", sparse = FALSE)
+  diag(mat_r) <- 0
+  reference[i] <- sd(rowSums(mat_r))/mean(rowSums(adjs.f[[1]]))
+}
+
+ref2 <- c(obs, reference)
+
+sum(obs<ref2)/length(ref2)
+
+par(xpd = FALSE)
+hist(reference, las = 1, xlim = c(0, 1), col = "grey", border = NA, main = "Reference distribution", xlab = "Test statistic values")
+lines(x = c(obs, obs), y = c(0, 500), col = "red", lwd = 4)
+lines(x = rep(quantile(ref2, 0.025), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+lines(x = rep(quantile(ref2, 0.975), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+
+
+obs <- sd(rowSums(adjs.f[[2]])/mean(rowSums(adjs.f[[2]])))
+
+reference <- numeric()
+
+for(i in 1:1000) {
+  net_r <- igraph::erdos.renyi.game(n = nrow(adjs.f[[2]]), p.or.m = sum(sign(adjs.f[[2]]))/2, type = "gnm")
+  net_r <- set_edge_attr(net_r, "weight", value = rnorm(n = sum(sign(adjs.f[[2]]))/2, mean = mean(adjs.f[[2]]), sd = sd(adjs.f[[2]])))
+  mat_r <- as_adjacency_matrix(net_r, type = "both", attr = "weight", sparse = FALSE)
+  diag(mat_r) <- 0
+  reference[i] <- sd(rowSums(mat_r))/mean(rowSums(adjs.f[[2]]))
+}
+
+ref2 <- c(obs, reference)
+
+sum(obs<ref2)/length(ref2)
+
+par(xpd = FALSE)
+hist(reference, las = 1, xlim = c(0, 1), col = "grey", border = NA, main = "Reference distribution", xlab = "Test statistic values")
+lines(x = c(obs, obs), y = c(0, 500), col = "red", lwd = 4)
+lines(x = rep(quantile(ref2, 0.025), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
+lines(x = rep(quantile(ref2, 0.975), 2), y = c(0, 500), col = "darkblue", lwd = 2, lty = 2)
